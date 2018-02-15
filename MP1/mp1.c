@@ -132,8 +132,9 @@ int __init mp1_init(void)
 	//setup timer
 	setup_timer(&my_timer, update_pid_time, 0);
 	//setup interval
-	mod_timer(&my_timer, jiffies + msecs_to_jiffies(50));//jiffies is a global variable
-	
+	if(mod_timer(&my_timer, jiffies + msecs_to_jiffies(50)) != 0){//jiffies is a global variable
+		printk(KERN_ALERT "mod_timer error\n");
+	}
 	//add_timer(&my_timer);
 	//init_timer(&my_timer);
 	//my_timer.function = update_pid_time;
@@ -154,7 +155,9 @@ void __exit mp1_exit(void)
 	remove_proc_entry(DIRECTORY, NULL);
    
    
-
+	if(del_timer( &my_timer ) != 0){
+		printk(KERN_ALERT "del_timer error\n");
+	}
 	printk(KERN_ALERT "MP1 MODULE UNLOADED\n");
 }
 
