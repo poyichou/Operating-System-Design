@@ -2,7 +2,7 @@
 #include <linux/kernel.h>
 #include <linux/proc_fs.h>
 #include <linux/uaccess.h> 
-//#include<linux/linux.h>
+//#include<linux/list.h>
 #define FILENAME "status"
 #define DIRECTORY "mp1"
 #define MAXSIZE 2048
@@ -14,7 +14,7 @@
  struct my_cool_list{
 	struct list_head list;//kernel's list structure
 	int my_cool_data;
-	coid* my_cool_void;
+	void* my_cool_void;
  };
  */
 static struct proc_dir_entry *proc_dir;
