@@ -132,7 +132,7 @@ int __init mp1_init(void)
 	//setup timer
 	setup_timer(&my_timer, update_pid_time, 0);
 	//setup interval
-	if(mod_timer(&my_timer, jiffies + msecs_to_jiffies(50)) != 0){//jiffies is a global variable
+	if(mod_timer(&my_timer, jiffies + msecs_to_jiffies(5000)) != 0){//jiffies is a global variable
 		printk(KERN_ALERT "mod_timer error\n");
 	}
 	//add_timer(&my_timer);
