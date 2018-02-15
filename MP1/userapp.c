@@ -14,5 +14,8 @@ int main(int argc, char* argv[])
 	fprintf(fp, "%d", (int)pid);
 	fclose(fp);
 	//fprintf(stdout, "%d", (int)pid);
+	while(1){
+		sleep(1);
+	}
 	return 0;
 }

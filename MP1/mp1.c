@@ -6,6 +6,7 @@
 #include <linux/uaccess.h> 
 #include <linux/list.h>
 #include <linux/slab.h>
+#include <linux/string.h>
 
 #include "mp1_given.h"
 
@@ -38,13 +39,10 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 	char *ptr;
 	mesg[0] = 0;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		sprintf(tmpmsg,  "%d: %lu", (int)(temp->pid), temp->time);
+		sprintf(tmpmsg,  "%d: %lu\n", (int)(temp->pid), temp->time);
 		if(strlen(mesg) + strlen(tmpmsg) + 1 > MAXSIZE){
 			printk(KERN_ALERT "proccess too much\n");
 		}else{
-			if(strlen(mesg) > 0){
-				strcat(mesg, "\n");
-			}
 			strcat(mesg, tmpmsg);
 		}
 	}
@@ -52,11 +50,12 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 	ptr = mesg + *offset;
 	while(count > 0 && *ptr != 0)
 	{
-		put_user(*(ptr++), buffer);
+		put_user(*(ptr++), buffer++);
 		count--;
 		result++;
 	}
-	printk(KERN_ALERT "Sent %d characters to the user\n", result);
+	if(result > 0)
+		printk(KERN_ALERT "Sent %d characters to the user\n", result);
 	*offset += result;
 	return result;
 }
@@ -101,8 +100,9 @@ static void destroy_pid(struct pid_time *del){
 	list_del(&(del->list));
 	kfree(del);
 }
-static void set_pid_time(unsigned long data){
+static void update_pid_time(unsigned long data){
 	struct pid_time *temp, *tempn;
+	printk(KERN_ALERT "update pid time\n");
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		if(get_cpu_use((int)(temp->pid), &(temp->time)) != 0){//proccess not exists anymore
 			destroy_pid(temp);
@@ -130,10 +130,15 @@ int __init mp1_init(void)
 	}
 	INIT_LIST_HEAD(&HEAD);// initialize it
 	//setup timer
-	setup_timer(&my_timer, set_pid_time, 0);
+	setup_timer(&my_timer, update_pid_time, 0);
 	//setup interval
 	mod_timer(&my_timer, jiffies + msecs_to_jiffies(50));//jiffies is a global variable
-   
+	
+	//add_timer(&my_timer);
+	//init_timer(&my_timer);
+	//my_timer.function = update_pid_time;
+	//my_timer.data = ((unsigned long)0);
+	//my_timer.expires = jiffies + 50 * HZ;
 	printk(KERN_ALERT "MP1 MODULE LOADED\n");
    	return 0;   
 }
