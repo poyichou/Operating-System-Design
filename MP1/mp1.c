@@ -101,10 +101,16 @@ static void destroy_pid(struct pid_time *del){
 	list_del(&(del->list));
 	kfree(del);
 }
+static void destroy_all_pid(void){
+	struct pid_time *temp, *tempn;
+	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
+		destroy_pid(temp);
+	}
+}
 static void work_handler(struct work_struct *data){
 	struct pid_time *temp, *tempn;
-	printk(KERN_ALERT "work_handler\n");
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
+		//update pid time
 		if(get_cpu_use((int)(temp->pid), &(temp->time)) != 0){//proccess not exists anymore
 			destroy_pid(temp);
 		}
@@ -115,6 +121,7 @@ static void timer_handler(unsigned long data){
 	if(mod_timer(&my_timer, jiffies + msecs_to_jiffies(5000)) != 0){//jiffies is a global variable
 		printk(KERN_ALERT "mod_timer error\n");
 	}
+	//workqueue is necessary because of spec
 	//setup workqueue
 	INIT_WORK(&work, work_handler);
 	//set to "events"
@@ -160,10 +167,18 @@ void __exit mp1_exit(void)
 	remove_proc_entry(FILENAME, proc_dir);
 	remove_proc_entry(DIRECTORY, NULL);
    
-   
+	//remove timer 
 	if(del_timer( &my_timer ) != 0){
 		printk(KERN_ALERT "del_timer error\n");
 	}
+
+	//in case our work in default workqueue not executed
+	//not need to destroy default workqueue cause it's shared
+	flush_scheduled_work();
+
+	//in case of unloaded with some registered processes are still running
+	destroy_all_pid();
+	
 	printk(KERN_ALERT "MP1 MODULE UNLOADED\n");
 }
 

@@ -15,7 +15,6 @@ int main(int argc, char* argv[])
 	fclose(fp);
 	//fprintf(stdout, "%d", (int)pid);
 	while(1){
-		sleep(1);
 	}
 	return 0;
 }
