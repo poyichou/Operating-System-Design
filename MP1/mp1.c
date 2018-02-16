@@ -24,6 +24,7 @@ static struct proc_dir_entry *proc_entry;
 static char mesg[MAXSIZE];
 static struct list_head HEAD;
 static struct timer_list my_timer;
+static struct work_struct work; 
 
 struct pid_time{
 	pid_t pid;
@@ -100,14 +101,24 @@ static void destroy_pid(struct pid_time *del){
 	list_del(&(del->list));
 	kfree(del);
 }
-static void update_pid_time(unsigned long data){
+static void work_handler(struct work_struct *data){
 	struct pid_time *temp, *tempn;
-	printk(KERN_ALERT "update pid time\n");
+	printk(KERN_ALERT "work_handler\n");
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		if(get_cpu_use((int)(temp->pid), &(temp->time)) != 0){//proccess not exists anymore
 			destroy_pid(temp);
 		}
 	}
+}
+static void timer_handler(unsigned long data){
+	//make timer periodic
+	if(mod_timer(&my_timer, jiffies + msecs_to_jiffies(5000)) != 0){//jiffies is a global variable
+		printk(KERN_ALERT "mod_timer error\n");
+	}
+	//setup workqueue
+	INIT_WORK(&work, work_handler);
+	//set to "events"
+	queue_work(system_wq, &work);
 }
 // mp1_init - Called when module is loaded
 int __init mp1_init(void)
@@ -130,16 +141,11 @@ int __init mp1_init(void)
 	}
 	INIT_LIST_HEAD(&HEAD);// initialize it
 	//setup timer
-	setup_timer(&my_timer, update_pid_time, 0);
+	setup_timer(&my_timer, timer_handler, 0);
 	//setup interval
 	if(mod_timer(&my_timer, jiffies + msecs_to_jiffies(5000)) != 0){//jiffies is a global variable
 		printk(KERN_ALERT "mod_timer error\n");
 	}
-	//add_timer(&my_timer);
-	//init_timer(&my_timer);
-	//my_timer.function = update_pid_time;
-	//my_timer.data = ((unsigned long)0);
-	//my_timer.expires = jiffies + 50 * HZ;
 	printk(KERN_ALERT "MP1 MODULE LOADED\n");
    	return 0;   
 }
