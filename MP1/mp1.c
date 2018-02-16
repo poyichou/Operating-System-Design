@@ -48,6 +48,7 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 		}
 	}
 	kfree(tmpmsg);
+	//get bytes need to read after last time
 	ptr = mesg + *offset;
 	while(count > 0 && *ptr != 0)
 	{
@@ -57,6 +58,7 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 	}
 	if(result > 0)
 		printk(KERN_ALERT "Sent %d characters to the user\n", result);
+	//record mesg read this time
 	*offset += result;
 	return result;
 }
@@ -66,6 +68,7 @@ static ssize_t mp1_write(struct file *file, const char __user *buffer, size_t co
 	struct pid_time *temp;
 	size_t size;
 	size = MAXSIZE;
+	//get bytes need to write after last time
 	if(size > count - *offset){
 		size = count - *offset;
 	}
@@ -74,7 +77,7 @@ static ssize_t mp1_write(struct file *file, const char __user *buffer, size_t co
 			printk(KERN_ALERT "Failed to get %ld characters from the user\n", size);
 			return -EFAULT;
 		}
-		//printk(KERN_ALERT "Get %s, %ld characters from the user\n", mesg, size);
+		//record mesg writen this time
 		*offset += size;
 		temp = kmalloc(sizeof(struct pid_time), GFP_KERNEL);
 		if(temp == NULL){
@@ -88,7 +91,10 @@ static ssize_t mp1_write(struct file *file, const char __user *buffer, size_t co
 			return 0;
 		}
 		INIT_LIST_HEAD(&(temp->list));
-		list_add(&(temp->list), &HEAD);
+		//need lock for the list
+		rcu_read_lock();
+			list_add(&(temp->list), &HEAD);
+		rcu_read_unlock();
 	}
 	return size;
 }
@@ -97,10 +103,15 @@ static const struct file_operations mp1_file = {
 	.read  = mp1_read,
 	.write = mp1_write,
 };
+//free node
 static void destroy_pid(struct pid_time *del){
-	list_del(&(del->list));
-	kfree(del);
+	//need lock for the list
+	rcu_read_unlock();
+		list_del(&(del->list));
+		kfree(del);
+	rcu_read_lock();
 }
+//free all node
 static void destroy_all_pid(void){
 	struct pid_time *temp, *tempn;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
@@ -112,6 +123,7 @@ static void work_handler(struct work_struct *data){
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		//update pid time
 		if(get_cpu_use((int)(temp->pid), &(temp->time)) != 0){//proccess not exists anymore
+			//free node
 			destroy_pid(temp);
 		}
 	}
