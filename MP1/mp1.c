@@ -196,9 +196,7 @@ void __exit mp1_exit(void)
 	remove_proc_entry(DIRECTORY, NULL);
    
 	//remove timer 
-	if(del_timer( &my_timer ) != 0){
-		printk(KERN_ALERT "del_timer error\n");
-	}
+	del_timer( &my_timer );
 
 	//in case our work in default workqueue not executed
 	//not need to destroy default workqueue cause it's shared
