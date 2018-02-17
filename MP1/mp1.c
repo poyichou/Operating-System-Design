@@ -39,7 +39,9 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 	struct pid_time *temp, *tempn;
 	char *tmpmsg = kmalloc(MAXSIZE, GFP_KERNEL);
 	char *ptr;
-	mesg[0] = 0;
+	unsigned long flags;
+	spin_lock_irqsave(&sp_lock, flags);
+	mesg[0] = 0;//put it after lock, to avoid writen by other 
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		sprintf(tmpmsg,  "%d: %lu\n", (int)(temp->pid), temp->time);
 		if(strlen(mesg) + strlen(tmpmsg) + 1 > MAXSIZE){
@@ -48,8 +50,10 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 			strcat(mesg, tmpmsg);
 		}
 	}
+	spin_unlock_irqrestore(&sp_lock, flags);
 	kfree(tmpmsg);
 	//get bytes need to read after last time
+	spin_lock_irqsave(&sp_lock, flags);
 	ptr = mesg + *offset;
 	while(count > 0 && *ptr != 0)
 	{
@@ -61,14 +65,14 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 		printk(KERN_ALERT "Sent %d characters to the user\n", result);
 	//record mesg read this time
 	*offset += result;
+	spin_unlock_irqrestore(&sp_lock, flags);
 	return result;
 }
 int add_pid_time(struct pid_time *temp){
 	//add a pid
 	unsigned long flags;
-	INIT_LIST_HEAD(&(temp->list));
-	
 	spin_lock_irqsave(&sp_lock, flags);
+	INIT_LIST_HEAD(&(temp->list));
 	
 	list_add(&(temp->list), &HEAD);
 	
