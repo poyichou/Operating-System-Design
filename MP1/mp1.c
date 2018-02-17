@@ -104,13 +104,6 @@ static ssize_t mp1_write(struct file *file, const char __user *buffer, size_t co
 			return 0;
 		}
 		add_pid_time(temp);
-		//INIT_LIST_HEAD(&(temp->list));
-		////need lock for the list
-		//spin_lock_irqsave(&sp_lock, flags);
-		//
-		//list_add(&(temp->list), &HEAD);
-		//
-		//spin_unlock_irqrestore(&sp_lock, flags);
 	}
 	return size;
 }
@@ -120,16 +113,21 @@ static const struct file_operations mp1_file = {
 	.write = mp1_write,
 };
 //free node
-static void destroy_pid(struct pid_time *del){
+static void __destroy_pid(struct pid_time *del){
 	list_del(&(del->list));
 	kfree(del);
 }
 //free all node
 static void destroy_all_pid(void){
 	struct pid_time *temp, *tempn;
+	unsigned long flags;
+	spin_lock_irqsave(&sp_lock, flags);
+	
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		destroy_pid(temp);
+		__destroy_pid(temp);
 	}
+	
+	spin_unlock_irqrestore(&sp_lock, flags);
 }
 static void work_handler(struct work_struct *data){
 	struct pid_time *temp, *tempn;
@@ -137,10 +135,12 @@ static void work_handler(struct work_struct *data){
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		//update pid time
 		spin_lock_irqsave(&sp_lock, flags);
+		
 		if(get_cpu_use((int)(temp->pid), &(temp->time)) != 0){//proccess not exists anymore
 			//free node
-			destroy_pid(temp);
+			__destroy_pid(temp);
 		}
+		
 		spin_unlock_irqrestore(&sp_lock, flags);
 	}
 }
