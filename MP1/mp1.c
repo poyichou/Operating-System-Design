@@ -7,6 +7,7 @@
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/string.h>
+#include <linux/spinlock.h>
 
 #include "mp1_given.h"
 
@@ -25,7 +26,7 @@ static char mesg[MAXSIZE];
 static struct list_head HEAD;
 static struct timer_list my_timer;
 static struct work_struct work; 
-
+static DEFINE_SPINLOCK(sp_lock);
 struct pid_time{
 	pid_t pid;
 	unsigned long time;
@@ -62,7 +63,18 @@ static ssize_t mp1_read(struct file *file, char __user *buffer, size_t count, lo
 	*offset += result;
 	return result;
 }
-
+int add_pid_time(struct pid_time *temp){
+	//add a pid
+	unsigned long flags;
+	INIT_LIST_HEAD(&(temp->list));
+	
+	spin_lock_irqsave(&sp_lock, flags);
+	
+	list_add(&(temp->list), &HEAD);
+	
+	spin_unlock_irqrestore(&sp_lock, flags);
+	return 0;
+}
 static ssize_t mp1_write(struct file *file, const char __user *buffer, size_t count, loff_t *offset){
 	//implement
 	struct pid_time *temp;
@@ -79,6 +91,7 @@ static ssize_t mp1_write(struct file *file, const char __user *buffer, size_t co
 		}
 		//record mesg writen this time
 		*offset += size;
+		//add a pid
 		temp = kmalloc(sizeof(struct pid_time), GFP_KERNEL);
 		if(temp == NULL){
 			printk(KERN_ALERT "kmaoolc error\n");
@@ -90,11 +103,14 @@ static ssize_t mp1_write(struct file *file, const char __user *buffer, size_t co
 			kfree(temp);
 			return 0;
 		}
-		INIT_LIST_HEAD(&(temp->list));
-		//need lock for the list
-		rcu_read_lock();
-			list_add(&(temp->list), &HEAD);
-		rcu_read_unlock();
+		add_pid_time(temp);
+		//INIT_LIST_HEAD(&(temp->list));
+		////need lock for the list
+		//spin_lock_irqsave(&sp_lock, flags);
+		//
+		//list_add(&(temp->list), &HEAD);
+		//
+		//spin_unlock_irqrestore(&sp_lock, flags);
 	}
 	return size;
 }
@@ -105,11 +121,8 @@ static const struct file_operations mp1_file = {
 };
 //free node
 static void destroy_pid(struct pid_time *del){
-	//need lock for the list
-	rcu_read_unlock();
-		list_del(&(del->list));
-		kfree(del);
-	rcu_read_lock();
+	list_del(&(del->list));
+	kfree(del);
 }
 //free all node
 static void destroy_all_pid(void){
@@ -120,12 +133,15 @@ static void destroy_all_pid(void){
 }
 static void work_handler(struct work_struct *data){
 	struct pid_time *temp, *tempn;
+	unsigned long flags;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		//update pid time
+		spin_lock_irqsave(&sp_lock, flags);
 		if(get_cpu_use((int)(temp->pid), &(temp->time)) != 0){//proccess not exists anymore
 			//free node
 			destroy_pid(temp);
 		}
+		spin_unlock_irqrestore(&sp_lock, flags);
 	}
 }
 static void timer_handler(unsigned long data){
@@ -136,7 +152,7 @@ static void timer_handler(unsigned long data){
 	//workqueue is necessary because of spec
 	//setup workqueue
 	INIT_WORK(&work, work_handler);
-	//set to "events"
+	//set work to "events"
 	queue_work(system_wq, &work);
 }
 // mp1_init - Called when module is loaded
