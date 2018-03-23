@@ -218,7 +218,7 @@ static void timer_handler(unsigned long data){
 	if(object->task_state == SLEEPING){
 		object->task_state = READY;
 	}
-	spin_lock_irqsave(&sp_lock, flags);
+	spin_unlock_irqrestore(&sp_lock, flags);
 	//trigger kernel thread
 	wake_up_process(kthrd);
 }
@@ -236,9 +236,9 @@ static void registration(int pid, unsigned long period, unsigned long computatio
 		printk(KERN_ALERT "kmem_cache_alloc error\n");
 		return;
 	}
-	spin_lock_irqsave(&sp_lock, flags);
+	//spin_lock_irqsave(&sp_lock, flags);
 	object->tsk = find_task_by_pid((unsigned int)pid);
-	spin_unlock_irqrestore(&sp_lock, flags);
+	//spin_unlock_irqrestore(&sp_lock, flags);
 	object->pid = (pid_t)pid;
 	object->task_state = SLEEPING;
 	object->task_period = period;
