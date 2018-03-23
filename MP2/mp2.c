@@ -89,7 +89,11 @@ static int kthread_fn(void* data){
 		
 		if(target == NULL || (currtask != NULL && target->task_period >= currtask->task_period)){
 			spin_unlock_irqrestore(&sp_lock, flags);
-			return 0;
+			//set kthread
+			set_current_state(TASK_UNINTERRUPTIBLE);
+			//sleep
+			schedule();
+			continue;
 		}
 		//switch
 		preempt_task(currtask);
@@ -104,17 +108,18 @@ static int kthread_fn(void* data){
 		//sleep
 		schedule();
 	}
-	printk(KERN_INFO "Thread Stopping\n");
+	printk(KERN_ALERT "Thread Stopping\n");
 	do_exit(0);
 	return 0;
 }
 static void init_my_kthread(void){
-	printk(KERN_INFO "Creating Thread\n");
+	printk(KERN_ALERT "Creating Thread\n");
 	kthrd = kthread_create(kthread_fn, NULL, "mythread");
+	wake_up_process(kthrd);
 	if(!IS_ERR(kthrd)){
-		printk("Thread Created successfully\n");
+		printk(KERN_ALERT "Thread Created successfully\n");
 	}else{
-		printk(KERN_INFO "Thread creation failed\n");
+		printk(KERN_ALERT "Thread creation failed\n");
 	}
 	return;
 }
@@ -197,7 +202,7 @@ static int admit_control(unsigned long period, unsigned long computation){
 	}
 	P += period;
 	C += computation;
-	if((computation * 1000 / period) <= 693){
+	if((C * 1000 / P) <= 693){
 		return 0;
 	}
 	return -1;
@@ -410,7 +415,7 @@ void __exit mp2_exit(void)
 	
 	if (kthrd){
 		kthread_stop(kthrd);
-		printk(KERN_INFO "Kernel thread stopped");
+		printk(KERN_ALERT "Kernel thread stopped");
 	}
 	printk(KERN_ALERT "MP2 MODULE UNLOADED\n");
 }
