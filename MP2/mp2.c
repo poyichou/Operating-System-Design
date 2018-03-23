@@ -42,7 +42,7 @@ struct mp2_task_struct{
 	struct timer_list	task_timer;
 	struct list_head	list;//kernel's list structure
 };
-struct task_struct* kthrd;//kernel thread
+static struct task_struct* kthrd;//kernel thread
 static struct mp2_task_struct *currtask = NULL;
 
 static struct mp2_task_struct* highest_priority_task(void){
@@ -273,7 +273,7 @@ static void destroy_all_pid(void){
 	spin_unlock_irqrestore(&sp_lock, flags);
 }
 
-void deregistration(pid_t pid){
+static void deregistration(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
@@ -290,7 +290,7 @@ void deregistration(pid_t pid){
 		spin_unlock_irqrestore(&sp_lock, flags);
 	}
 }
-void set_task_state_sleep(pid_t pid){
+static void set_task_state_sleep(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
@@ -309,7 +309,7 @@ void set_task_state_sleep(pid_t pid){
 	}
 	printk(KERN_ALERT "yield nothing\n");
 }
-void my_yield(pid_t pid){
+static void my_yield(pid_t pid){
 	set_task_state_sleep(pid);
 	//set_current_state(TASK_UNINTERRUPTIBLE);//to make it not in running queue after schedule()
 	//trigger kernel thread
