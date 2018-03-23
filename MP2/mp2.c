@@ -314,8 +314,8 @@ static void my_yield(pid_t pid){
 	//set_current_state(TASK_UNINTERRUPTIBLE);//to make it not in running queue after schedule()
 	//trigger kernel thread
 	wake_up_process(kthrd);
-	//sleep
-	schedule();
+	////sleep
+	//schedule();
 }
 static char* my_strtok(char*str){
 	int i = 0;
@@ -331,7 +331,6 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 	//implement
 	size_t size;
 	char *pidstr, *periodstr, *compstr;
-	unsigned long flags;
 	size = MAXSIZE;
 	//For REGISTRATION: “R PID PERIOD COMPUTATION”
 	//For YIELD: “Y PID”
@@ -357,10 +356,8 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 					(unsigned long)simple_strtol(compstr, NULL, 10));
 
 		}else if(mesg[0] == 'Y'){
-			spin_lock_irqsave(&sp_lock, flags);
 			pidstr = my_strtok(mesg);
 			my_yield((pid_t)simple_strtol(pidstr, NULL, 10));
-			spin_unlock_irqrestore(&sp_lock, flags);
 		}else if(mesg[0] == 'D'){
 			pidstr = my_strtok(mesg);
 			deregistration((pid_t)simple_strtol(pidstr, NULL, 10));
