@@ -231,8 +231,8 @@ static void registration(int pid, unsigned long period, unsigned long computatio
 	}
 	//slab alloc
 	object = kmem_cache_alloc(my_cache, GFP_KERNEL);
-	if (object) {
-		kmem_cache_free(my_cache, object);
+	if (!object) {
+		//kmem_cache_free(my_cache, object);
 		printk(KERN_ALERT "kmem_cache_alloc error\n");
 		return;
 	}
