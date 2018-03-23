@@ -16,6 +16,7 @@ int ifexist(int mypid){
 	int pid, state;
 	unsigned long period, computation;
 	while(fscanf(fp, "%d %lu %lu %d", &pid, &computation, &period, &state) != EOF){
+		printf("pid=%d\n", pid);
 		if(mypid == pid){
 			fclose(fp);
 			return 0;
@@ -45,7 +46,7 @@ void deregister(int pid){
 int main(int argc, char* argv[])
 {
 	unsigned long period = 60;
-	unsigned long computation = 100;
+	unsigned long computation = 10;
 	if(argc == 3){
 		period = atoi(argv[1]);
 		computation = atoi(argv[2]);
@@ -72,16 +73,14 @@ int main(int argc, char* argv[])
 	gettimeofday(&tv1, NULL);
 	double last_time = tv1.tv_sec, spent;
 	call_yield((int)pid);
-	while(1){
+	int time = 0;
+	while(time < 20){
 		//job
 		gettimeofday(&tv2, NULL);
 		spent = last_time - tv2.tv_sec;
-		printf("wake up time: %lf, timespent: %lf", (double)tv2.tv_sec, spent);
 		last_time = tv2.tv_sec;
-		//time out
-		if((double)(tv2.tv_sec - tv1.tv_sec) >= (computation * 1000)){
-			break;
-		}
+		time++;
+		printf("wake up time: %lf, timespent: %lf", (double)tv2.tv_sec, spent);
 		call_yield((int)pid);
 	}
 	deregister((int)pid);
