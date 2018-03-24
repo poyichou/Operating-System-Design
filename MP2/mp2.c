@@ -277,6 +277,7 @@ static void destroy_all_pid(void){
 static void deregistration(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
+	printk(KERN_ALERT "removeing a node\n");
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		spin_lock_irqsave(&sp_lock, flags);
 		
