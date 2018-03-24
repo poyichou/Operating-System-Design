@@ -45,20 +45,17 @@ struct mp2_task_struct{
 static struct task_struct* kthrd;//kernel thread
 static struct mp2_task_struct *currtask = NULL;
 
-static struct mp2_task_struct* highest_priority_task(void){
+static struct mp2_task_struct* __highest_priority_task(void){
 	struct mp2_task_struct *temp, *tempn;
 	struct mp2_task_struct *target = NULL;
-	//unsigned long flags;
 	unsigned long min_period;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		//spin_lock_irqsave(&sp_lock, flags);
 		if(temp->task_state == READY){
 			if(target == NULL || min_period > temp->task_period){
 				target = temp;
 				min_period = temp->task_period;
 			}
 		}
-		//spin_unlock_irqrestore(&sp_lock, flags);
 	}
 	return target;
 }
@@ -67,7 +64,6 @@ static void preempt_task(struct mp2_task_struct *tsk){
 	struct sched_param sparam;
 	if(tsk != NULL){
 		tsk->task_state = READY;
-		//set_current_state(TASK_UNINTERRUPTIBLE);//to make it not in running queue after schedule()
 		sparam.sched_priority = 0;
 		sched_setscheduler(tsk->tsk, SCHED_NORMAL, &sparam);
 	}
@@ -86,11 +82,10 @@ static int kthread_fn(void* data){
 	
 	while(!kthread_should_stop()){
 		spin_lock_irqsave(&sp_lock, flags);
-		target = highest_priority_task();
+		target = __highest_priority_task();
 		
 		if(target == NULL || (currtask != NULL && target->task_period >= currtask->task_period)){
-			//no ready task to be switched
-			;
+			/*no ready task to be switched*/;
 		}else{
 			//switch
 			preempt_task(currtask);
@@ -170,10 +165,14 @@ static void init_slab_cache(void){
 			0,
 			SLAB_HWCACHE_ALIGN,
 			NULL);
+	printk(KERN_ALERT "kmem_cache created\n");
 	return;
 }
 static void destroy_slab_cache(void){
-	if(my_cache) kmem_cache_destroy(my_cache);
+	if(my_cache){
+		kmem_cache_destroy(my_cache);
+		printk(KERN_ALERT "kmem_cache destroyed\n");
+	}
 	return;
 }
 
@@ -208,7 +207,6 @@ static int admit_control(unsigned long period, unsigned long computation){
 static void timer_handler(unsigned long data){
 	struct mp2_task_struct *object = (struct mp2_task_struct*)data;
 	unsigned long flags;
-	//printk(KERN_ALERT "timer_handler\n");
 	spin_lock_irqsave(&sp_lock, flags);
 	//make timer periodic
 	if(mod_timer(&(object->task_timer), jiffies + msecs_to_jiffies(object->task_period)) != 0){//jiffies is a global variable
@@ -222,9 +220,8 @@ static void timer_handler(unsigned long data){
 	wake_up_process(kthrd);
 }
 static void registration(int pid, unsigned long period, unsigned long computation){
-	//For REGISTRATION: “R, PID, PERIOD, COMPUTATION”
+	//For REGISTRATION: "R PID PERIOD COMPUTATION"
 	struct mp2_task_struct *object;
-	//unsigned long flags;
 	if(admit_control(period, computation) == -1){
 		return;
 	}
@@ -235,9 +232,7 @@ static void registration(int pid, unsigned long period, unsigned long computatio
 		printk(KERN_ALERT "kmem_cache_alloc error\n");
 		return;
 	}
-	//spin_lock_irqsave(&sp_lock, flags);
 	object->tsk = find_task_by_pid((unsigned int)pid);
-	//spin_unlock_irqrestore(&sp_lock, flags);
 	object->pid = (pid_t)pid;
 	object->task_state = SLEEPING;
 	object->task_period = period;
@@ -282,7 +277,6 @@ static void deregistration(pid_t pid){
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		
 		if(temp->pid == pid){
-			//free node
 			__destroy_pid(temp);
 			
 			spin_unlock_irqrestore(&sp_lock, flags);
@@ -311,7 +305,6 @@ static void set_task_state_sleep(pid_t pid){
 }
 static void my_yield(pid_t pid){
 	set_task_state_sleep(pid);
-	//set_current_state(TASK_UNINTERRUPTIBLE);//to make it not in running queue after schedule()
 	//trigger kernel thread
 	wake_up_process(kthrd);
 	//sleep
@@ -334,9 +327,9 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 	char *tmpmsg = kmalloc(MAXSIZE, GFP_KERNEL);
 	unsigned long flags;
 	size = MAXSIZE;
-	//For REGISTRATION: “R PID PERIOD COMPUTATION”
-	//For YIELD: “Y PID”
-	//For DE-REGISTRATION: “D PID”
+	//For REGISTRATION: "R PID PERIOD COMPUTATION"
+	//For YIELD: "Y PID"
+	//For DE-REGISTRATION: "D PID"
 	//get bytes need to write after last time
 	if(size > count - *offset){
 		size = count - *offset;
