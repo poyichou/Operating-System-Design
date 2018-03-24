@@ -43,15 +43,21 @@ void deregister(int pid){
 	fprintf(fp, "D %d", (int)pid);
 	fclose(fp);
 }
+void job(){
+	int i;
+	for(i = 0 ; i < 100000 ; i++);
+}
 int main(int argc, char* argv[])
 {
-	unsigned long period = 60;
-	unsigned long computation = 10;
-	if(argc == 3){
+	unsigned long period = 600;
+	unsigned long computation = 100;
+	unsigned long jobs = 5;
+	if(argc == 4){
 		period = atoi(argv[1]);
 		computation = atoi(argv[2]);
+		jobs = atoi(argv[3]);
 	}else if(argc != 1){
-		printf("usage: [programe] [period] [computation] or [program]");
+		printf("usage: [programe] [period] [computation] [jobs] or [program]");
 		return 0;
 	}
 	FILE *fp = fopen("/proc/mp2/status", "w");
@@ -74,13 +80,16 @@ int main(int argc, char* argv[])
 	double last_time = tv1.tv_sec, spent;
 	call_yield((int)pid);
 	int time = 0;
-	while(time < 5){
+	while(time < jobs){
 		//job
 		gettimeofday(&tv2, NULL);
-		spent = tv2.tv_sec - last_time;
+		printf("pid: %d, start time:\t%d ms\n", (int)pid, (int)(tv2.tv_sec * 1000));
 		last_time = tv2.tv_sec;
 		time++;
-		printf("pid: %d, wake up time: %lf, timespent: %lf\n", (int)pid, (double)tv2.tv_sec, spent);
+		job();
+		gettimeofday(&tv2, NULL);
+		spent = tv2.tv_sec - last_time;
+		printf("pid: %d, finish time:\t%d ms\n", (int)pid, (int)(tv2.tv_sec * 1000));
 		call_yield((int)pid);
 	}
 	deregister((int)pid);
