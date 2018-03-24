@@ -28,6 +28,7 @@ MODULE_DESCRIPTION("CS-423 MP2");
 static struct proc_dir_entry *proc_dir;
 static struct proc_dir_entry *proc_entry;
 static char mesg[MAXSIZE];
+static char wmesg[MAXSIZE];
 
 static struct list_head HEAD;
 static struct kmem_cache *my_cache;//slab cache
@@ -346,11 +347,11 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 	}
 	if(size > 0){
 		spin_lock_irqsave(&sp_lock, flags);
-		if(copy_from_user(mesg, buffer + *offset, size) != 0){
+		if(copy_from_user(wmesg, buffer + *offset, size) != 0){
 			printk(KERN_ALERT "Failed to get %ld characters from the user\n", size);
 			return -EFAULT;
 		}
-		strcpy(tmpmsg, mesg);
+		strcpy(tmpmsg, wmesg);
 		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
 		*offset += size;
