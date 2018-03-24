@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 	double last_time = tv1.tv_sec, spent;
 	call_yield((int)pid);
 	int time = 0;
-	while(time < 20){
+	while(time < 5){
 		//job
 		gettimeofday(&tv2, NULL);
 		spent = tv2.tv_sec - last_time;

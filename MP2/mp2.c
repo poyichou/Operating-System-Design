@@ -254,6 +254,9 @@ static void registration(int pid, unsigned long period, unsigned long computatio
 
 //free node
 static void __destroy_pid(struct mp2_task_struct *del){
+	if(del == currtask){
+		currtask = NULL;
+	}
 	//remove timer 
 	del_timer(&(del->task_timer));
 	list_del(&(del->list));
