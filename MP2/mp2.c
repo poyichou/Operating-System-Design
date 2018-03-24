@@ -277,7 +277,7 @@ static void destroy_all_pid(void){
 static void deregistration(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
-	printk(KERN_ALERT "removeing a node\n");
+	printk(KERN_ALERT "removeing %d\n", (int)pid);
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		spin_lock_irqsave(&sp_lock, flags);
 		
@@ -334,6 +334,8 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 	//implement
 	size_t size;
 	char *pidstr, *periodstr, *compstr;
+	char *tmpmsg = kmalloc(MAXSIZE, GFP_KERNEL);
+	unsigned long flags;
 	size = MAXSIZE;
 	//For REGISTRATION: “R PID PERIOD COMPUTATION”
 	//For YIELD: “Y PID”
@@ -343,14 +345,17 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 		size = count - *offset;
 	}
 	if(size > 0){
+		spin_lock_irqsave(&sp_lock, flags);
 		if(copy_from_user(mesg, buffer + *offset, size) != 0){
 			printk(KERN_ALERT "Failed to get %ld characters from the user\n", size);
 			return -EFAULT;
 		}
+		strcpy(tmpmsg, mesg);
+		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
 		*offset += size;
-		if(mesg[0] == 'R'){
-			pidstr = my_strtok(mesg);
+		if(tmpmsg[0] == 'R'){
+			pidstr = my_strtok(tmpmsg);
 			periodstr = my_strtok(pidstr);
 			compstr = my_strtok(periodstr);
 			
@@ -358,13 +363,15 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 					(unsigned long)simple_strtol(periodstr, NULL, 10),
 					(unsigned long)simple_strtol(compstr, NULL, 10));
 
-		}else if(mesg[0] == 'Y'){
-			pidstr = my_strtok(mesg);
+		}else if(tmpmsg[0] == 'Y'){
+			pidstr = my_strtok(tmpmsg);
 			my_yield((pid_t)simple_strtol(pidstr, NULL, 10));
-		}else if(mesg[0] == 'D'){
-			pidstr = my_strtok(mesg);
+		}else if(tmpmsg[0] == 'D'){
+			printk(KERN_ALERT "DDD:%s\n", tmpmsg);
+			pidstr = my_strtok(tmpmsg);
 			deregistration((pid_t)simple_strtol(pidstr, NULL, 10));
 		}
+		kfree(tmpmsg);
 	}
 	return size;
 }
