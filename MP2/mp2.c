@@ -275,8 +275,8 @@ static void destroy_all_pid(void){
 static void deregistration(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
+	spin_lock_irqsave(&sp_lock, flags);
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		spin_lock_irqsave(&sp_lock, flags);
 		
 		if(temp->pid == pid){
 			//free node
@@ -286,8 +286,8 @@ static void deregistration(pid_t pid){
 			return;
 		}
 		
-		spin_unlock_irqrestore(&sp_lock, flags);
 	}
+	spin_unlock_irqrestore(&sp_lock, flags);
 }
 static void set_task_state_sleep(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
