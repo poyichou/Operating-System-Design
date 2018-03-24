@@ -79,6 +79,7 @@ static void set_new_task(struct mp2_task_struct *target){
 	sparam.sched_priority = 99;
 	sched_setscheduler(target->tsk, SCHED_FIFO, &sparam);
 	currtask = target;
+	printk(KERN_ALERT "set_new_task\n");
 }
 static int kthread_fn(void* data){
 	struct mp2_task_struct *target = highest_priority_task();
@@ -210,7 +211,7 @@ static int admit_control(unsigned long period, unsigned long computation){
 static void timer_handler(unsigned long data){
 	struct mp2_task_struct *object = (struct mp2_task_struct*)data;
 	unsigned long flags;
-	//spin_lock_irqsave(&sp_lock, flags);
+	spin_lock_irqsave(&sp_lock, flags);
 	//make timer periodic
 	if(mod_timer(&(object->task_timer), jiffies + msecs_to_jiffies(object->task_period)) != 0){//jiffies is a global variable
 		printk(KERN_ALERT "mod_timer error\n");
@@ -218,7 +219,7 @@ static void timer_handler(unsigned long data){
 	if(object->task_state == SLEEPING){
 		object->task_state = READY;
 	}
-	//spin_unlock_irqrestore(&sp_lock, flags);
+	spin_unlock_irqrestore(&sp_lock, flags);
 	//trigger kernel thread
 	wake_up_process(kthrd);
 }
@@ -298,11 +299,13 @@ static void set_task_state_sleep(pid_t pid){
 		
 		if(temp->pid == pid){
 			spin_lock_irqsave(&sp_lock, flags);
-			//free node
+
 			temp->task_state = SLEEPING;
 			set_task_state(temp->tsk, TASK_UNINTERRUPTIBLE);
+			currtask = NULL;
 			
 			spin_unlock_irqrestore(&sp_lock, flags);
+			printk(KERN_ALERT "yield success\n");
 			return;
 		}
 	}
@@ -311,7 +314,6 @@ static void set_task_state_sleep(pid_t pid){
 static void my_yield(pid_t pid){
 	set_task_state_sleep(pid);
 	//set_current_state(TASK_UNINTERRUPTIBLE);//to make it not in running queue after schedule()
-	currtask = NULL;
 	//trigger kernel thread
 	wake_up_process(kthrd);
 	//sleep
@@ -343,7 +345,7 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 	}
 	if(size > 0){
 		spin_lock_irqsave(&sp_lock, flags);
-		//memset(mesg, 0, MAXSIZE);
+		memset(mesg, 0, MAXSIZE);
 		if(copy_from_user(mesg, buffer + *offset, size) != 0){
 			printk(KERN_ALERT "Failed to get %ld characters from the user\n", size);
 			return -EFAULT;
