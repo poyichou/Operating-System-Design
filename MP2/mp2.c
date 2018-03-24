@@ -89,19 +89,20 @@ static int kthread_fn(void* data){
 		spin_lock_irqsave(&sp_lock, flags);
 		
 		if(target == NULL || (currtask != NULL && target->task_period >= currtask->task_period)){
+			//no ready task to be switched
 			;
 		}else{
 			//switch
 			preempt_task(currtask);
 			set_new_task(target);
+			//put it into run queue
+			wake_up_process(target->tsk);
 		}
 		
 		spin_unlock_irqrestore(&sp_lock, flags);
 
 		//set kthread
 		set_current_state(TASK_INTERRUPTIBLE);
-		//put it into run queue
-		wake_up_process(target->tsk);
 		//sleep
 		schedule();
 	}
