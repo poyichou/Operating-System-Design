@@ -8,18 +8,22 @@ design decision:
 	timer would trigger dispatching thread, which check if context switch is needed (only check tasks that are in READY state)  
 test:  
 	How to compile:  
-		run "make"  
+		`make`  
 	After compiling, load the module:  
-		if you are root, run:	"insmod mp2.ko"  
-		if you are not,	 run:	"sudo insmod mp2.ko"  
+		if you are root : `insmod mp2.ko`  
+		if you are not  : `sudo insmod mp2.ko`  
 	  
 	Then, test with one task by running:  
-		"./userapp &" or "./userapp [period] [computation] [jobs]"  
+		`./userapp &`  
+		or  
+		`./userapp [period] [computation] [jobs]`  
 		if period and computation not specified, they are set to 600, 100 and 5  
 	we could test with many tasks by running command above several times or just run  
-		"./test.sh"  
+		`./test.sh`  
 		it test 3 tasks with different periods and computations each for 5 times  
 	  
 	To unload the module:  
-		if you are root, run:	"rmmod mp2"  
-		if you are not,	 run:	"sudo rmmod mp2" 
+		if you are root :  
+		`rmmod mp2`  
+		if you are not  :  
+		`sudo rmmod mp2` 
