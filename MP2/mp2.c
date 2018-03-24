@@ -225,7 +225,7 @@ static void timer_handler(unsigned long data){
 static void registration(int pid, unsigned long period, unsigned long computation){
 	//For REGISTRATION: “R, PID, PERIOD, COMPUTATION”
 	struct mp2_task_struct *object;
-	unsigned long flags;
+	//unsigned long flags;
 	if(admit_control(period, computation) == -1){
 		return;
 	}
@@ -259,6 +259,7 @@ static void __destroy_pid(struct mp2_task_struct *del){
 	del_timer(&(del->task_timer));
 	list_del(&(del->list));
 	kmem_cache_free(my_cache, del);
+	printk(KERN_ALERT "removed a node\n");
 }
 //free all node
 static void destroy_all_pid(void){
@@ -312,10 +313,11 @@ static void set_task_state_sleep(pid_t pid){
 static void my_yield(pid_t pid){
 	set_task_state_sleep(pid);
 	//set_current_state(TASK_UNINTERRUPTIBLE);//to make it not in running queue after schedule()
+	currtask = NULL;
 	//trigger kernel thread
 	wake_up_process(kthrd);
-	////sleep
-	//schedule();
+	//sleep
+	schedule();
 }
 static char* my_strtok(char*str){
 	int i = 0;
