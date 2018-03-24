@@ -16,7 +16,7 @@ int ifexist(int mypid){
 	int pid, state;
 	unsigned long period, computation;
 	while(fscanf(fp, "%d %lu %lu %d", &pid, &computation, &period, &state) != EOF){
-		//printf("pid=%d\n", pid);
+		printf("pid=%d\n", pid);
 		if(mypid == pid){
 			fclose(fp);
 			return 0;

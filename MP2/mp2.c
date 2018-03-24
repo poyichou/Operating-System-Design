@@ -210,7 +210,7 @@ static int admit_control(unsigned long period, unsigned long computation){
 static void timer_handler(unsigned long data){
 	struct mp2_task_struct *object = (struct mp2_task_struct*)data;
 	unsigned long flags;
-	spin_lock_irqsave(&sp_lock, flags);
+	//spin_lock_irqsave(&sp_lock, flags);
 	//make timer periodic
 	if(mod_timer(&(object->task_timer), jiffies + msecs_to_jiffies(object->task_period)) != 0){//jiffies is a global variable
 		printk(KERN_ALERT "mod_timer error\n");
@@ -218,7 +218,7 @@ static void timer_handler(unsigned long data){
 	if(object->task_state == SLEEPING){
 		object->task_state = READY;
 	}
-	spin_unlock_irqrestore(&sp_lock, flags);
+	//spin_unlock_irqrestore(&sp_lock, flags);
 	//trigger kernel thread
 	wake_up_process(kthrd);
 }
@@ -279,9 +279,9 @@ static void deregistration(pid_t pid){
 	unsigned long flags;
 	printk(KERN_ALERT "removeing %d\n", (int)pid);
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		spin_lock_irqsave(&sp_lock, flags);
 		
 		if(temp->pid == pid){
+			spin_lock_irqsave(&sp_lock, flags);
 			//free node
 			__destroy_pid(temp);
 			
@@ -289,16 +289,15 @@ static void deregistration(pid_t pid){
 			return;
 		}
 		
-		spin_unlock_irqrestore(&sp_lock, flags);
 	}
 }
 static void set_task_state_sleep(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		spin_lock_irqsave(&sp_lock, flags);
 		
 		if(temp->pid == pid){
+			spin_lock_irqsave(&sp_lock, flags);
 			//free node
 			temp->task_state = SLEEPING;
 			set_task_state(temp->tsk, TASK_UNINTERRUPTIBLE);
@@ -306,8 +305,6 @@ static void set_task_state_sleep(pid_t pid){
 			spin_unlock_irqrestore(&sp_lock, flags);
 			return;
 		}
-		
-		spin_unlock_irqrestore(&sp_lock, flags);
 	}
 	printk(KERN_ALERT "yield nothing\n");
 }
@@ -351,11 +348,11 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 			printk(KERN_ALERT "Failed to get %ld characters from the user\n", size);
 			return -EFAULT;
 		}
-		printk(KERN_ALERT "count:%ld\n", count);
 		strcpy(tmpmsg, mesg);
 		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
 		*offset += size;
+		printk(KERN_ALERT "write:%s\n", tmpmsg);
 		if(tmpmsg[0] == 'R'){
 			pidstr = my_strtok(tmpmsg);
 			periodstr = my_strtok(pidstr);
@@ -369,7 +366,6 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 			pidstr = my_strtok(tmpmsg);
 			my_yield((pid_t)simple_strtol(pidstr, NULL, 10));
 		}else if(tmpmsg[0] == 'D'){
-			printk(KERN_ALERT "DDD:%s\n", tmpmsg);
 			pidstr = my_strtok(tmpmsg);
 			deregistration((pid_t)simple_strtol(pidstr, NULL, 10));
 		}
