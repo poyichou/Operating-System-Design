@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
 	while(time < 20){
 		//job
 		gettimeofday(&tv2, NULL);
-		spent = last_time - tv2.tv_sec;
+		spent = tv2.tv_sec - last_time;
 		last_time = tv2.tv_sec;
 		time++;
 		printf("wake up time: %lf, timespent: %lf\n", (double)tv2.tv_sec, spent);

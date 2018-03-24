@@ -50,7 +50,6 @@ static struct mp2_task_struct* highest_priority_task(void){
 	struct mp2_task_struct *target = NULL;
 	unsigned long flags;
 	unsigned long min_period;
-	printk(KERN_ALERT "highest_priority_task\n");
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		spin_lock_irqsave(&sp_lock, flags);
 		if(temp->task_state == READY){
@@ -80,7 +79,6 @@ static void set_new_task(struct mp2_task_struct *target){
 	sparam.sched_priority = 99;
 	sched_setscheduler(target->tsk, SCHED_FIFO, &sparam);
 	currtask = target;
-	printk(KERN_ALERT "set_new_task\n");
 }
 static int kthread_fn(void* data){
 	struct mp2_task_struct *target;
@@ -88,7 +86,6 @@ static int kthread_fn(void* data){
 	
 	while(!kthread_should_stop()){
 		target = highest_priority_task();
-		printk(KERN_ALERT "kthread_fn\n");
 		spin_lock_irqsave(&sp_lock, flags);
 		
 		if(target == NULL || (currtask != NULL && target->task_period >= currtask->task_period)){
@@ -264,7 +261,6 @@ static void __destroy_pid(struct mp2_task_struct *del){
 	del_timer(&(del->task_timer));
 	list_del(&(del->list));
 	kmem_cache_free(my_cache, del);
-	printk(KERN_ALERT "removed a node\n");
 }
 //free all node
 static void destroy_all_pid(void){
@@ -282,7 +278,6 @@ static void destroy_all_pid(void){
 static void deregistration(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
-	printk(KERN_ALERT "removeing %d\n", (int)pid);
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		
 		if(temp->pid == pid){
@@ -309,7 +304,6 @@ static void set_task_state_sleep(pid_t pid){
 			currtask = NULL;
 			
 			spin_unlock_irqrestore(&sp_lock, flags);
-			printk(KERN_ALERT "yield success\n");
 			return;
 		}
 	}
@@ -358,7 +352,7 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
 		*offset += size;
-		printk(KERN_ALERT "write:%s\n", tmpmsg);
+		printk(KERN_ALERT "%s\n", tmpmsg);
 		if(tmpmsg[0] == 'R'){
 			pidstr = my_strtok(tmpmsg);
 			periodstr = my_strtok(pidstr);
