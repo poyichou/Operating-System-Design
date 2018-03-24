@@ -346,11 +346,12 @@ static ssize_t mp2_write(struct file *file, const char __user *buffer, size_t co
 	}
 	if(size > 0){
 		spin_lock_irqsave(&sp_lock, flags);
-		memset(mesg, 0, MAXSIZE);
+		//memset(mesg, 0, MAXSIZE);
 		if(copy_from_user(mesg, buffer + *offset, size) != 0){
 			printk(KERN_ALERT "Failed to get %ld characters from the user\n", size);
 			return -EFAULT;
 		}
+		printk(KERN_ALERT "count:%ld\n", count);
 		strcpy(tmpmsg, mesg);
 		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
