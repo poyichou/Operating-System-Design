@@ -84,6 +84,7 @@ static void set_new_task(struct mp2_task_struct *target){
 static int kthread_fn(void* data){
 	struct mp2_task_struct *target = highest_priority_task();
 	unsigned long flags;
+	printk(KERN_ALERT "kthread_fn\n");
 	
 	while(!kthread_should_stop()){
 		spin_lock_irqsave(&sp_lock, flags);
@@ -211,6 +212,7 @@ static int admit_control(unsigned long period, unsigned long computation){
 static void timer_handler(unsigned long data){
 	struct mp2_task_struct *object = (struct mp2_task_struct*)data;
 	unsigned long flags;
+	printk(KERN_ALERT "timer_handler\n");
 	spin_lock_irqsave(&sp_lock, flags);
 	//make timer periodic
 	if(mod_timer(&(object->task_timer), jiffies + msecs_to_jiffies(object->task_period)) != 0){//jiffies is a global variable
