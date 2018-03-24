@@ -48,17 +48,17 @@ static struct mp2_task_struct *currtask = NULL;
 static struct mp2_task_struct* highest_priority_task(void){
 	struct mp2_task_struct *temp, *tempn;
 	struct mp2_task_struct *target = NULL;
-	unsigned long flags;
+	//unsigned long flags;
 	unsigned long min_period;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		spin_lock_irqsave(&sp_lock, flags);
+		//spin_lock_irqsave(&sp_lock, flags);
 		if(temp->task_state == READY){
 			if(target == NULL || min_period > temp->task_period){
 				target = temp;
 				min_period = temp->task_period;
 			}
 		}
-		spin_unlock_irqrestore(&sp_lock, flags);
+		//spin_unlock_irqrestore(&sp_lock, flags);
 	}
 	return target;
 }
@@ -85,8 +85,8 @@ static int kthread_fn(void* data){
 	unsigned long flags;
 	
 	while(!kthread_should_stop()){
-		target = highest_priority_task();
 		spin_lock_irqsave(&sp_lock, flags);
+		target = highest_priority_task();
 		
 		if(target == NULL || (currtask != NULL && target->task_period >= currtask->task_period)){
 			//no ready task to be switched
@@ -276,9 +276,9 @@ static void deregistration(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
+		spin_lock_irqsave(&sp_lock, flags);
 		
 		if(temp->pid == pid){
-			spin_lock_irqsave(&sp_lock, flags);
 			//free node
 			__destroy_pid(temp);
 			
@@ -286,16 +286,15 @@ static void deregistration(pid_t pid){
 			return;
 		}
 		
+		spin_unlock_irqrestore(&sp_lock, flags);
 	}
 }
 static void set_task_state_sleep(pid_t pid){
 	struct mp2_task_struct *temp, *tempn;
 	unsigned long flags;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
-		
+		spin_lock_irqsave(&sp_lock, flags);
 		if(temp->pid == pid){
-			spin_lock_irqsave(&sp_lock, flags);
-
 			temp->task_state = SLEEPING;
 			set_task_state(temp->tsk, TASK_UNINTERRUPTIBLE);
 			currtask = NULL;
@@ -303,6 +302,7 @@ static void set_task_state_sleep(pid_t pid){
 			spin_unlock_irqrestore(&sp_lock, flags);
 			return;
 		}
+		spin_unlock_irqrestore(&sp_lock, flags);
 	}
 	printk(KERN_ALERT "yield nothing\n");
 }
