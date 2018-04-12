@@ -9,6 +9,7 @@
 #include <linux/string.h>
 #include <linux/spinlock.h>
 #include <linux/mm.h> /* vmalloc_to_pfn */
+#include <linux/vmalloc.h>/* vmalloc */
 
 #include "mp3_given.h"
 
