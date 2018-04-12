@@ -7,15 +7,17 @@ RM:=rm
 
 .PHONY : clean
 
-all: clean modules app
+all: clean modules
 
 obj-m:= mp3.o
 
 modules:
 	$(MAKE) -C $(KERNEL_SRC) M=$(SUBDIR) modules
 
-app: userapp.c userapp.h
-	$(GCC) -o userapp userapp.c
+install: mp3.ko
+	sudo insmod mp3.ko
+node:
+	mknod node c $(cat /proc/devices | grep mp3_chrdev | awk '{print $1}') 0
 
 clean:
 	$(RM) -f userapp *~ *.ko *.o *.mod.c Module.symvers modules.order .mp3.* -r .tmp_versions
