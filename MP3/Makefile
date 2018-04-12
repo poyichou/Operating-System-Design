@@ -1,3 +1,4 @@
+CONFIG_MODULE_SIG=n
 EXTRA_CFLAGS +=
 APP_EXTRA_FLAGS:= -O2 -ansi -pedantic
 KERNEL_SRC:= /lib/modules/$(shell uname -r)/build

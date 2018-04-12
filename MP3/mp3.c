@@ -305,6 +305,7 @@ static void __vmalloc_set_reserved(void)
 	spin_lock_irqsave(&sp_lock, flags);
 	for (i = 0; i < ALLOC_SIZE; i += PAGE_SIZE) {
 		ppage = vmalloc_to_page((void *)(vmalloc_addr + i));
+		/* define in linux/page-flags.h */
 		SetPageReserved(ppage); /* 2.6.0~2.6.18 */
 		/* ppage->vm_flag = VM_RESERVED; *//* 2.6.25~ */
 	}
@@ -314,6 +315,25 @@ static void __vmalloc_set_reserved(void)
 	}
 	spin_unlock_irqrestore(&sp_lock, flags);
 
+}
+static void __vmalloc_clear(void)
+{
+	int i;
+	unsigned long flags;
+	struct page *ppage;
+	spin_lock_irqsave(&sp_lock, flags);
+	for (i = 0; i < ALLOC_SIZE; i += PAGE_SIZE) {
+		ppage = vmalloc_to_page((void *)(vmalloc_addr + i));
+		/* define in linux/page-flags.h */
+		ClearPageReserved(ppage); /* 2.6.0~2.6.18 */
+		/* ppage->vm_flag = VM_RESERVED; *//* 2.6.25~ */
+	}
+	/* initialization according to the implementation of monitor.c */
+	for (i = 0; i < sizeof(unsigned long) * 4 * 600; i += sizeof(unsigned long)) {
+		*((unsigned long *)(vmalloc_addr + i)) = (unsigned long)(-1);
+	}
+	spin_unlock_irqrestore(&sp_lock, flags);
+	vfree(vmalloc_addr);
 }
 /* called when uninstalling the module */
 static void __clear_work_queue(void)
@@ -382,7 +402,7 @@ void __exit mp3_exit(void)
 	__destroy_all_pid();
 	//unregister character device
 	unregister_chrdev(major, CHRDEV_NAME);
-	vfree(vmalloc_addr);
+	__vmalloc_clear();
 	
 	#ifdef DEBUG
 	printk(KERN_ALERT "MP3 MODULE UNLOADED\n");
