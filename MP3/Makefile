@@ -17,6 +17,8 @@ modules:
 
 install: mp3.ko
 	sudo insmod mp3.ko
+uninstall:
+	sudo rmmod mp3
 node:
 	mknod node c $(cat /proc/devices | grep mp3_chrdev | awk '{print $1}') 0
 
