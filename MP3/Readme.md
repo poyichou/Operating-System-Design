@@ -12,7 +12,7 @@
     -> flush the delayed work queue  
     -> destroy the delayed work queue  
 * create a character device to handle mmap in userspace  
-  * First `vmalloc (128*PAGE_SIZE)` of virtual memory for latter use(PAGE\_SIZE should be 4KB).  
+  * First `vmalloc (128*PAGE_SIZE)` of virtual memory for latter use (PAGE\_SIZE should be 4KB).  
     The reason of not using `kmalloc` is that 
     (128\*PAGE\_SIZE) is beyond the maximum size that kmalloc can handle (128KB).  
   * Because memory allocated by `vmalloc` is not physically continuous,  
@@ -20,7 +20,7 @@
     we have to `SetPageReserved` for page of the every PAGE\_SIZE of memory.  
   * Also because memory allocated by vmalloc is not physically continuous,  
     when user `mmap` a piece of memory,  
-    we have to `remap_pfn_range` PAGE\_SIZE by PAGE\_SIZE the virtual memory.  
+    we have to `remap_pfn_range` the virtual memory PAGE\_SIZE by PAGE\_SIZE.  
 * use `struct list_head` to store information of task  
   The list store pid and the accummulated value of utime and stime of every task  
   and update the accummulated value when the delayed work executed.  
