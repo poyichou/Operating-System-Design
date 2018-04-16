@@ -76,7 +76,7 @@ static void store_sample(unsigned long accm_min_flt, unsigned long accm_maj_flt,
 	*(((unsigned long *)curr) + 0) = jiffies;
 	*(((unsigned long *)curr) + 1) = accm_min_flt;
 	*(((unsigned long *)curr) + 2) = accm_maj_flt;
-	*(((unsigned long *)curr) + 3) = (accm_sutime - prev_su_time) / (jiffies - prev_jiffies);
+	*(((unsigned long *)curr) + 3) = (accm_sutime - prev_su_time) * 100 / (jiffies - prev_jiffies);
 	prev_jiffies = jiffies;
 	prev_su_time = accm_sutime;
 	curr += (sizeof(unsigned long) * 4);
