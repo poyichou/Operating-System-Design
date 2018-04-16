@@ -227,6 +227,9 @@ static ssize_t proc_write(struct file *file, const char __user *buffer, size_t c
 			return -EFAULT;
 		}
 		strcpy(tmpmsg, mesg);
+		if(tmpmsg[strlen(tmpmsg) - 1] == '\n') {
+			tmpmsg[strlen(tmpmsg) - 1] = 0;
+		}
 		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
 		*offset += size;
@@ -262,6 +265,7 @@ static int device_mmap(struct file *filp, struct vm_area_struct *vma)
 	unsigned long i;
 	unsigned long pfn;
 	unsigned long len = vma->vm_end - vma->vm_start;
+	printk(KERN_ALERT "remap_pfn_rang len=%lu\n", len);
 	for (i = 0; i < len; i += PAGE_SIZE) {
 		pfn = vmalloc_to_pfn(vmalloc_addr_add(vmalloc_addr, i));
 		if (pfn == -EINVAL) {
@@ -310,7 +314,7 @@ static void __vmalloc_set_reserved(void)
 		/* ppage->vm_flag = VM_RESERVED; *//* 2.6.25~ */
 	}
 	/* initialization according to the implementation of monitor.c */
-	for (i = 0; i < sizeof(unsigned long) * 4 * 600; i += sizeof(unsigned long)) {
+	for (i = 0; i < sizeof(unsigned long) * 4 * 600 * 20; i += sizeof(unsigned long)) {
 		*((unsigned long *)(vmalloc_addr + i)) = (unsigned long)(-1);
 	}
 	spin_unlock_irqrestore(&sp_lock, flags);
@@ -327,10 +331,6 @@ static void __vmalloc_clear(void)
 		/* define in linux/page-flags.h */
 		ClearPageReserved(ppage); /* 2.6.0~2.6.18 */
 		/* ppage->vm_flag = VM_RESERVED; *//* 2.6.25~ */
-	}
-	/* initialization according to the implementation of monitor.c */
-	for (i = 0; i < sizeof(unsigned long) * 4 * 600; i += sizeof(unsigned long)) {
-		*((unsigned long *)(vmalloc_addr + i)) = (unsigned long)(-1);
 	}
 	spin_unlock_irqrestore(&sp_lock, flags);
 	vfree(vmalloc_addr);
