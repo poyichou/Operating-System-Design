@@ -175,9 +175,7 @@ static ssize_t proc_read(struct file *file, char __user *buffer, size_t count, l
 	kfree(tmpmsg);
 	return result;
 }
-static int __add_task(struct pid_list *tsk){
-	unsigned long flags;
-	spin_lock_irqsave(&sp_lock, flags);
+static int add_task(struct pid_list *tsk){
 	INIT_LIST_HEAD(&(tsk->list));
 	list_add(&(tsk->list), &HEAD);
 	task_count++;
@@ -188,10 +186,9 @@ static int __add_task(struct pid_list *tsk){
 		curr = vmalloc_addr;
 		queue_delayed_work(workqueue, &dwork, msecs_to_jiffies(50));
 	}
-	spin_unlock_irqrestore(&sp_lock, flags);
 	return 0;
 }
-static void __registration(pid_t pid){
+static void registration(pid_t pid){
 	struct pid_list *object = kmalloc(sizeof(struct pid_list), GFP_KERNEL);
 	object->pid = pid;
 	if(find_task_by_pid((unsigned int)pid) == NULL){
@@ -199,20 +196,16 @@ static void __registration(pid_t pid){
 		kfree(object);
 		return;
 	}
-	__add_task(object);
+	add_task(object);
 }
-static void __unregistration(pid_t pid){
-	unsigned long flags;
+static void unregistration(pid_t pid){
 	struct pid_list *temp, *tempn;
-	spin_lock_irqsave(&sp_lock, flags);
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		if(temp->pid == pid){
 			destroy_pid(temp);
-			spin_unlock_irqrestore(&sp_lock, flags);
 			return;
 		}
 	}
-	spin_unlock_irqrestore(&sp_lock, flags);
 }
 /**
  * For REGISTRATION: "R PID"
@@ -240,17 +233,17 @@ static ssize_t proc_write(struct file *file, const char __user *buffer, size_t c
 		if(tmpmsg[strlen(tmpmsg) - 1] == '\n') {
 			tmpmsg[strlen(tmpmsg) - 1] = 0;
 		}
-		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
 		*offset += size;
 		printk(KERN_ALERT "write to proc file: [%s]\n", tmpmsg);
 		if(tmpmsg[0] == 'R'){
 			pidstr = my_strtok(tmpmsg);
-			__registration((pid_t)simple_strtol(pidstr, NULL, 10));
+			registration((pid_t)simple_strtol(pidstr, NULL, 10));
 		}else if(tmpmsg[0] == 'U'){
 			pidstr = my_strtok(tmpmsg);
-			__unregistration((pid_t)simple_strtol(pidstr, NULL, 10));
+			unregistration((pid_t)simple_strtol(pidstr, NULL, 10));
 		}
+		spin_unlock_irqrestore(&sp_lock, flags);
 		kfree(tmpmsg);
 	}
 	return size;
