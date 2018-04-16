@@ -122,6 +122,10 @@ static void work_handler(struct work_struct *data)
 		printk(KERN_ALERT "work_handler logically wrong\n");
 		return;
 	}
+	if (accm_sutime == 0) {
+		/* to avoid negative */
+		prev_su_time = 0;
+	}
 	store_sample(accm_min_flt, accm_maj_flt, accm_sutime);
 
 	spin_unlock_irqrestore(&sp_lock, flags);
