@@ -20,7 +20,8 @@ install: mp3.ko
 uninstall:
 	sudo rmmod mp3
 node:
-	sudo -u $(shell whoami) mknod node c $(shell cat /proc/devices | grep mp3_chrdev | awk '{print $$1}') 0
+	sudo mknod node c $(shell cat /proc/devices | grep mp3_chrdev | awk '{print $$1}') 0
+	sudo chown $(shell whoami) node 
 
 clean:
 	$(RM) -f userapp *~ *.ko *.o *.mod.c Module.symvers modules.order .mp3.* -r .tmp_versions
