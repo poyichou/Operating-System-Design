@@ -35,8 +35,6 @@ static void* vmalloc_addr = NULL;
 static void* curr = NULL;
 static int major = 0;
 static unsigned long prev_jiffies = 0;
-/* previous stime + utime */
-static unsigned long prev_su_time = 0;
 
 static struct list_head HEAD;
 static DEFINE_SPINLOCK(sp_lock);
@@ -45,6 +43,7 @@ static struct workqueue_struct *workqueue;
 
 struct pid_list{
 	pid_t			pid;
+	unsigned long		prev_su_time;
 	/* kernel's list structure */
 	struct list_head	list;
 };
@@ -69,7 +68,7 @@ static void destroy_pid(struct pid_list *del){
  * Minor page fault is a fault that is handled without using a disk I/O 
  * operation (e.g., allocated by the malloc() function).
  */
-static void store_sample(unsigned long accm_min_flt, unsigned long accm_maj_flt, unsigned long accm_sutime)
+static void store_sample(unsigned long accm_min_flt, unsigned long accm_maj_flt, unsigned long accm_sutime_diff)
 {
 	if (curr == NULL || curr + (sizeof(unsigned long) * 4) > vmalloc_addr + SAMPLE_LEN) {
 		curr = vmalloc_addr;
@@ -77,24 +76,26 @@ static void store_sample(unsigned long accm_min_flt, unsigned long accm_maj_flt,
 	*(((unsigned long *)curr) + 0) = jiffies;
 	*(((unsigned long *)curr) + 1) = accm_min_flt;
 	*(((unsigned long *)curr) + 2) = accm_maj_flt;
-	*(((unsigned long *)curr) + 3) = (accm_sutime - prev_su_time) * 100 / (jiffies - prev_jiffies);
+	*(((unsigned long *)curr) + 3) = accm_sutime_diff * 100 / (jiffies - prev_jiffies);
 	prev_jiffies = jiffies;
-	prev_su_time = accm_sutime;
 	curr += (sizeof(unsigned long) * 4);
 }
-static void scan_cpu_use(unsigned long *accm_min_flt, unsigned long *accm_maj_flt, unsigned long *accm_sutime)
+static void scan_cpu_use(unsigned long *accm_min_flt, unsigned long *accm_maj_flt, unsigned long *accm_sutime_diff)
 {
 	struct pid_list *temp, *tempn;
 	struct task_struct *task;
+	unsigned long sutime = 0;
 	list_for_each_entry_safe(temp, tempn, &HEAD, list) {
 		task = find_task_by_pid(temp->pid);
 		if(task == NULL){
 			/* proccess not exists anymore */
 			destroy_pid(temp);
 		} else {
-			*accm_min_flt   += task->min_flt;
-			*accm_maj_flt   += task->maj_flt;
-			*accm_sutime    += task->utime + task->stime;
+			*accm_min_flt        += task->min_flt;
+			*accm_maj_flt        += task->maj_flt;
+			sutime                = task->utime + task->stime;
+			*accm_sutime_diff    += sutime - temp->prev_su_time;
+			temp->prev_su_time = sutime;
 		}
 	}
 }
@@ -105,7 +106,7 @@ static void scan_cpu_use(unsigned long *accm_min_flt, unsigned long *accm_maj_fl
  */
 static void work_handler(struct work_struct *data)
 {
-	unsigned long accm_min_flt = 0, accm_maj_flt = 0, accm_sutime = 0;
+	unsigned long accm_min_flt = 0, accm_maj_flt = 0, accm_sutime_diff = 0;
 	unsigned long flags;
 	if(jiffies_to_msecs(jiffies - prev_jiffies) < 10) {
 		/* might be waken up by flush, don't di things */
@@ -114,20 +115,15 @@ static void work_handler(struct work_struct *data)
 	queue_delayed_work(workqueue, &dwork, msecs_to_jiffies(50));
 
 	spin_lock_irqsave(&sp_lock, flags);
-	scan_cpu_use(&accm_min_flt, &accm_maj_flt, &accm_sutime);
+	scan_cpu_use(&accm_min_flt, &accm_maj_flt, &accm_sutime_diff);
 	if(prev_jiffies == 0){
 		/* test code, but the statement shouldn't be true */
 		prev_jiffies = jiffies;
-		prev_su_time = accm_sutime;
 		spin_unlock_irqrestore(&sp_lock, flags);
 		printk(KERN_ALERT "work_handler logically wrong\n");
 		return;
 	}
-	if (accm_sutime == 0) {
-		/* to avoid negative */
-		prev_su_time = 0;
-	}
-	store_sample(accm_min_flt, accm_maj_flt, accm_sutime);
+	store_sample(accm_min_flt, accm_maj_flt, accm_sutime_diff);
 
 	spin_unlock_irqrestore(&sp_lock, flags);
 }
@@ -182,7 +178,6 @@ static int add_task(struct pid_list *tsk){
 	if(task_count == 1){
 		workqueue = create_workqueue("mp3_wq");
 		prev_jiffies = jiffies;
-		prev_su_time = 0;
 		curr = vmalloc_addr;
 		queue_delayed_work(workqueue, &dwork, msecs_to_jiffies(50));
 	}
@@ -191,6 +186,7 @@ static int add_task(struct pid_list *tsk){
 static void registration(pid_t pid){
 	struct pid_list *object = kmalloc(sizeof(struct pid_list), GFP_KERNEL);
 	object->pid = pid;
+	object->prev_su_time = 0;
 	if(find_task_by_pid((unsigned int)pid) == NULL){
 		printk(KERN_ALERT "find_task_by_pid failed\n");
 		kfree(object);
