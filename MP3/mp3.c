@@ -227,6 +227,9 @@ static ssize_t proc_write(struct file *file, const char __user *buffer, size_t c
 			return -EFAULT;
 		}
 		strcpy(tmpmsg, mesg);
+		if(tmpmsg[strlen(tmpmsg) - 1] == '\n') {
+			tmpmsg[strlen(tmpmsg) - 1] = 0;
+		}
 		spin_unlock_irqrestore(&sp_lock, flags);
 		//record mesg writen this time
 		*offset += size;
