@@ -24,4 +24,4 @@ node:
 	sudo chown $(shell whoami) node 
 
 clean:
-	$(RM) -f userapp *~ *.ko *.o *.mod.c Module.symvers modules.order .mp3.* -r .tmp_versions
+	$(RM) -f node userapp *~ *.ko *.o *.mod.c Module.symvers modules.order .mp3.* -r .tmp_versions

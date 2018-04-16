@@ -322,7 +322,7 @@ static void __vmalloc_set_reserved(void)
 		/* ppage->vm_flag = VM_RESERVED; *//* 2.6.25~ */
 	}
 	/* initialization according to the implementation of monitor.c */
-	for (i = 0; i < sizeof(unsigned long) * 4 * 600 * 20; i += sizeof(unsigned long)) {
+	for (i = 0; i < SAMPLE_LEN; i += sizeof(unsigned long)) {
 		*((unsigned long *)(vmalloc_addr + i)) = (unsigned long)(-1);
 	}
 	spin_unlock_irqrestore(&sp_lock, flags);
