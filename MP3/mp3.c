@@ -106,6 +106,10 @@ static void work_handler(struct work_struct *data)
 {
 	unsigned long accm_min_flt = 0, accm_maj_flt = 0, accm_sutime = 0;
 	unsigned long flags;
+	if(jiffies_to_msecs(jiffies - prev_jiffies) < 10) {
+		/* might be waken up by flush, don't di things */
+		return;
+	}
 	queue_delayed_work(workqueue, &dwork, msecs_to_jiffies(50));
 
 	spin_lock_irqsave(&sp_lock, flags);
