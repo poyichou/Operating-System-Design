@@ -57,6 +57,7 @@ static void destroy_pid(struct pid_list *del){
 	kfree(del);
 	task_count--;
 	if(task_count == 0){
+		cancel_delayed_work(&dwork);
 		flush_workqueue(workqueue);
 		destroy_workqueue(workqueue);
 	}
@@ -184,6 +185,7 @@ static int __add_task(struct pid_list *tsk){
 		workqueue = create_workqueue("mp3_wq");
 		prev_jiffies = jiffies;
 		prev_su_time = 0;
+		curr = vmalloc_addr;
 		queue_delayed_work(workqueue, &dwork, msecs_to_jiffies(50));
 	}
 	spin_unlock_irqrestore(&sp_lock, flags);
@@ -313,8 +315,8 @@ static void __vmalloc_set_reserved(void)
 	int i;
 	unsigned long flags;
 	struct page *ppage;
-	vmalloc_addr = vmalloc(ALLOC_SIZE);
 	spin_lock_irqsave(&sp_lock, flags);
+	vmalloc_addr = vmalloc(ALLOC_SIZE);
 	for (i = 0; i < ALLOC_SIZE; i += PAGE_SIZE) {
 		ppage = vmalloc_to_page((void *)(vmalloc_addr + i));
 		/* define in linux/page-flags.h */
@@ -350,6 +352,7 @@ static void __clear_work_queue(void)
 	spin_lock_irqsave(&sp_lock, flags);
 
 	if(task_count > 0){
+		cancel_delayed_work(&dwork);
 		flush_workqueue(workqueue);
 		destroy_workqueue(workqueue);
 	}
