@@ -5,7 +5,9 @@ for ((i=0; i < num - 1; i++))
 do  
 	nice ./work 200 R 10000 &  
 done  
+
 nice ./work 200 R 10000
+sleep 1
 
 if [ $1 -eq 1 ]; then
 	./monitor > profile3.data
