@@ -12,7 +12,7 @@
     -> flush the delayed work queue  
     -> destroy the delayed work queue  
 * create a character device to handle mmap in userspace  
-  * First `vmalloc (128\*PAGE\_SIZE)` of virtual memory for latter use(PAGE\_SIZE should be 4KB).  
+  * First `vmalloc (128*PAGE_SIZE)` of virtual memory for latter use(PAGE\_SIZE should be 4KB).  
     The reason of not using `kmalloc` is that 
     (128\*PAGE\_SIZE) is beyond the maximum size that kmalloc can handle (128KB).  
   * Because memory allocated by `vmalloc` is not physically continuous,  
