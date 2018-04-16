@@ -314,7 +314,7 @@ static void __vmalloc_set_reserved(void)
 		/* ppage->vm_flag = VM_RESERVED; *//* 2.6.25~ */
 	}
 	/* initialization according to the implementation of monitor.c */
-	for (i = 0; i < sizeof(unsigned long) * 4 * 600; i += sizeof(unsigned long)) {
+	for (i = 0; i < sizeof(unsigned long) * 4 * 600 * 20; i += sizeof(unsigned long)) {
 		*((unsigned long *)(vmalloc_addr + i)) = (unsigned long)(-1);
 	}
 	spin_unlock_irqrestore(&sp_lock, flags);
@@ -331,10 +331,6 @@ static void __vmalloc_clear(void)
 		/* define in linux/page-flags.h */
 		ClearPageReserved(ppage); /* 2.6.0~2.6.18 */
 		/* ppage->vm_flag = VM_RESERVED; *//* 2.6.25~ */
-	}
-	/* initialization according to the implementation of monitor.c */
-	for (i = 0; i < sizeof(unsigned long) * 4 * 600; i += sizeof(unsigned long)) {
-		*((unsigned long *)(vmalloc_addr + i)) = (unsigned long)(-1);
 	}
 	spin_unlock_irqrestore(&sp_lock, flags);
 	vfree(vmalloc_addr);
