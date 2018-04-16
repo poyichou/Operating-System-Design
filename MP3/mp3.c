@@ -265,6 +265,7 @@ static int device_mmap(struct file *filp, struct vm_area_struct *vma)
 	unsigned long i;
 	unsigned long pfn;
 	unsigned long len = vma->vm_end - vma->vm_start;
+	printk(KERN_ALERT "remap_pfn_rang len=%lu\n", len);
 	for (i = 0; i < len; i += PAGE_SIZE) {
 		pfn = vmalloc_to_pfn(vmalloc_addr_add(vmalloc_addr, i));
 		if (pfn == -EINVAL) {
