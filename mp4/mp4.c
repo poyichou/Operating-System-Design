@@ -35,7 +35,7 @@ static int get_inode_sid(struct inode *inode)
         de = d_find_alias(inode);
         if (!de) {
                 pr_err("dentry is null\n");
-                rc = 0;
+                sid = 0;
                 // rc -EACCES;
                 goto out;
         }
@@ -158,6 +158,7 @@ static int mp4_inode_init_security(struct inode *inode, struct inode *dir,
                                    const char **name, void **value, size_t *len)
 {
         const struct mp4_security *curr_mp4_sec = current->cred->security;
+        char *xattr_name;
         if (!curr_mp4_sec) {
                 pr_err("dentry is null\n");
                 return -EOPNOTSUPP;
@@ -167,8 +168,9 @@ static int mp4_inode_init_security(struct inode *inode, struct inode *dir,
                 return -EOPNOTSUPP;
         }
         if (name) {
-                *name = kmalloc(strlen(XATTR_MP4_SUFFIX) + 1, GFP_KERNEL);
-                strcpy(*name, XATTR_MP4_SUFFIX);
+                xattr_name = kmalloc(strlen(XATTR_MP4_SUFFIX) + 1, GFP_KERNEL);
+                strcpy(xattr_name, XATTR_MP4_SUFFIX);
+                *name = xattr_name;
         } else {
                 pr_err("name null\n");
                 return -EOPNOTSUPP;
@@ -274,6 +276,7 @@ static int check_access(int sid, int mask)
                         rc = 0;
                         break;
         }
+        return rc;
 }
 
 /**
@@ -286,7 +289,7 @@ static int check_access(int sid, int mask)
  * returns 0 is access granter, -EACCES otherwise
  *
  */
-static int mp4_has_permission(int ssid, int osid, int mask)
+static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
 {
         int rc;
         if (ssid != MP4_TARGET_SID) {
@@ -298,7 +301,7 @@ static int mp4_has_permission(int ssid, int osid, int mask)
                 } else {
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
-                        if (rc > 0 && (mask & (MAY_READ | MAY_ACCESS | MAY_OPEN |
+                        if (osid >= 0 && (mask & (MAY_READ | MAY_ACCESS | MAY_OPEN |
                                                         MAY_NOT_BLOCK))) {
                         pr_info("Read, not target\n");
                                 return 0;
@@ -358,9 +361,9 @@ static int mp4_inode_permission(struct inode *inode, int mask)
         curr_mp4_sec = cred->security;
         rc = inode->i_op->getxattr(de, XATTR_NAME_MP4, xattr_value, XATTR_MAX_SIZE);
         if (rc <= 0) {
-                rc = mp4_has_permission(curr_mp4_sec->mp4_flags, -1, mask);
+                rc = mp4_has_permission(inode, curr_mp4_sec->mp4_flags, -1, mask);
         } else {
-                rc = mp4_has_permission(curr_mp4_sec->mp4_flags, 
+                rc = mp4_has_permission(inode, curr_mp4_sec->mp4_flags, 
                                 __cred_ctx_to_sid(xattr_value), mask);
         }
 out:
