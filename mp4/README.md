@@ -20,6 +20,7 @@ vim security/Makefile
 make clean
 #Or you can specify 1.5 times of your cores instead of `getconf _NPROCESSORS_ONLN`
 make -j `getconf _NPROCESSORS_ONLN` deb-pkg LOCALVERSION=-[whatever]
+CS423 machine problem 4 support (SECURITY_MP4_LSM) [N/y/?] (NEW) y
 ```
 ## To install kernel  
 ```bash
