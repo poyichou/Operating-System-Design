@@ -32,7 +32,6 @@ static int get_inode_sid(struct inode *inode)
         int sid, rc;
         char xattr_value[XATTR_MAX_SIZE];
         struct dentry *de;
-        char path[PATH_LEN];
         de = d_find_alias(inode);
         if (!de) {
                 pr_err("dentry is null\n");
@@ -77,7 +76,7 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
                 return -1;
         }
         if (sid  == MP4_TARGET_SID) {
-                new_mp4_sec->mp4_flag = MP4_TARGET_SID;
+                new_mp4_sec->mp4_flags = MP4_TARGET_SID;
         }
         return 0;
 }
@@ -97,7 +96,7 @@ static int mp4_cred_alloc_blank(struct cred *cred, gfp_t gfp)
         if (!mp4_sec)
                 return -ENOMEM;
 
-        mp4_sec->mp4_flag = MP4_NO_ACCESS;
+        mp4_sec->mp4_flags = MP4_NO_ACCESS;
         cred->security = mp4_sec;
         return 0;
 }
@@ -136,7 +135,7 @@ static int mp4_cred_prepare(struct cred *new, const struct cred *old,
         if (!mp4_sec)
                 return -ENOMEM;
 
-        mp4_sec->mp4_flag = MP4_NO_ACCESS;
+        mp4_sec->mp4_flags = MP4_NO_ACCESS;
         new->security = mp4_sec;
         return 0;
 }
@@ -163,7 +162,7 @@ static int mp4_inode_init_security(struct inode *inode, struct inode *dir,
                 pr_err("dentry is null\n");
                 return -EOPNOTSUPP;
         }
-        if (curr_mp4_sec->mp4_flag != MP4_TARGET_SID) {
+        if (curr_mp4_sec->mp4_flags != MP4_TARGET_SID) {
                 pr_info("create subject not target\n");
                 return -EOPNOTSUPP;
         }
@@ -359,9 +358,9 @@ static int mp4_inode_permission(struct inode *inode, int mask)
         curr_mp4_sec = cred->security;
         rc = inode->i_op->getxattr(de, XATTR_NAME_MP4, xattr_value, XATTR_MAX_SIZE);
         if (rc <= 0) {
-                rc = mp4_has_permission(curr_mp4_sec->mp4_flag, -1, mask);
+                rc = mp4_has_permission(curr_mp4_sec->mp4_flags, -1, mask);
         } else {
-                rc = mp4_has_permission(curr_mp4_sec->mp4_flag, 
+                rc = mp4_has_permission(curr_mp4_sec->mp4_flags, 
                                 __cred_ctx_to_sid(xattr_value), mask);
         }
 out:
