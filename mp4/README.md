@@ -2,6 +2,7 @@
 ## To compile kernel  
 ```bash
 sudo apt-get install git build-essential kernel-package fakeroot libncurses5-dev libssl-dev ccache libelf-dev
+sudo apt install -y libncurses5-dev attr
 #clone linux kernel
 git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 cd linux-stable
