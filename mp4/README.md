@@ -15,7 +15,7 @@ cp -r [mp4] security/
 #add `source security/mp4/Kconfig` to line 125
 vim security/Kconfig
 #add `subdir-$(CONFIG_SECURITY_MP4_LSM) += mp4` to line 11
-#add `obj-$(CONFIG_SECURITY_MP4_LSM)` += mp4/ to line 27
+#add `obj-$(CONFIG_SECURITY_MP4_LSM) += mp4/` to line 27
 vim security/Makefile
 make clean
 #Or you can specify 1.5 times of your cores instead of `getconf _NPROCESSORS_ONLN`
