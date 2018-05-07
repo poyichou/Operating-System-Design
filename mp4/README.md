@@ -1,5 +1,5 @@
 # Linux Security Module  
-## To compile kernel  
+## To compile kernel (might fail on Ubuntu 14.04 because old version of gcc)  
 ```bash
 sudo apt-get install git build-essential kernel-package fakeroot libncurses5-dev libssl-dev ccache libelf-dev
 sudo apt install -y libncurses5-dev attr
