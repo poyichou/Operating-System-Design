@@ -40,7 +40,7 @@ static int get_inode_sid(struct inode *inode)
         }
         if (!inode->i_op->getxattr) {
                 pr_err("getxattr not exist\n");
-                sid = -1;
+                sid = -2;
                 goto out;
         }
         rc = inode->i_op->getxattr(de, XATTR_NAME_MP4, xattr_value, XATTR_MAX_SIZE);
@@ -71,7 +71,9 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         int sid;
         new_mp4_sec = bprm->cred->security;
         sid = get_inode_sid(inode);
-        if (sid < 0) {
+        if (sid == -2) {
+                return 0;
+        }else if (sid < 0) {
                 return -1;
         }
         if(!new_mp4_sec) {
