@@ -39,7 +39,7 @@ static int get_inode_sid(struct inode *inode)
                 goto out;
         }
         if (!inode->i_op->getxattr) {
-                pr_err("getxattr not exist\n");
+                //pr_err("getxattr not exist\n");
                 sid = -2;
                 goto out;
         }
@@ -338,7 +338,7 @@ static int mp4_inode_permission(struct inode *inode, int mask)
                 goto out;
         }
         if (!inode->i_op->getxattr) {
-                pr_err("getxattr not exist\n");
+                //pr_err("getxattr not exist\n");
                 //rc = -EACCES;
                 rc = 0;
                 goto out;
