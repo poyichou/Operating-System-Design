@@ -102,6 +102,7 @@ static int mp4_cred_alloc_blank(struct cred *cred, gfp_t gfp)
         }
         mp4_sec->mp4_flags = MP4_NO_ACCESS;
         cred->security = mp4_sec;
+        pr_info("mp4_cred_alloc_blank succeed\n");
         return 0;
 }
 
@@ -116,6 +117,7 @@ static void mp4_cred_free(struct cred *cred)
 {
         kfree(cred->security);
         cred->security = NULL;
+        pr_info("mp4_cred_free succeed\n");
 }
 
 /**
@@ -133,14 +135,19 @@ static int mp4_cred_prepare(struct cred *new, const struct cred *old,
         struct mp4_security *mp4_sec;
 
         old_mp4_sec = old->security;
-
-        mp4_sec = kmemdup(old_mp4_sec, sizeof(struct mp4_security), gfp);
+        if (!old_mp4_sec) {
+                /* first task would not have our tag */
+                mp4_sec = kmalloc(sizeof(struct mp4_security), gfp);
+        } else {
+                mp4_sec = kmemdup(old_mp4_sec, sizeof(struct mp4_security), gfp);
+        }
         if (!mp4_sec){
                 pr_err("kmemdup failed\n");
                 return -ENOMEM;
         }
         mp4_sec->mp4_flags = MP4_NO_ACCESS;
         new->security = mp4_sec;
+        pr_info("mp4_cred_prepare succeed\n");
         return 0;
 }
 
@@ -170,6 +177,7 @@ static int mp4_inode_init_security(struct inode *inode, struct inode *dir,
                 rc = inode->i_op->setxattr(de, XATTR_NAME_MP4,
                                         "read-write", strlen("read-write"), 0);
                 dput(de);
+                pr_info("inode_init_security: target\n");
         } else {
                 pr_info("inode_init_security: not target\n");
         }
