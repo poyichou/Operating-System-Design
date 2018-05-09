@@ -35,8 +35,7 @@ static int get_inode_sid(struct inode *inode)
         de = d_find_alias(inode);
         if (!de) {
                 pr_err("dentry is null\n");
-                sid = 0;
-                // rc -EACCES;
+                sid = -1;
                 goto out;
         }
         if (!inode->i_op->getxattr) {
@@ -75,6 +74,10 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         if (sid < 0) {
                 return -1;
         }
+        if(!new_mp4_sec) {
+                pr_debug("set_creds to null mp4_security\n");
+                return -1;
+        }
         if (sid  == MP4_TARGET_SID) {
                 new_mp4_sec->mp4_flags = MP4_TARGET_SID;
         }
@@ -93,9 +96,10 @@ static int mp4_cred_alloc_blank(struct cred *cred, gfp_t gfp)
         struct mp4_security *mp4_sec;
 
         mp4_sec = kzalloc(sizeof(struct mp4_security), gfp);
-        if (!mp4_sec)
+        if (!mp4_sec){
+                pr_err("kzalloc failed\n");
                 return -ENOMEM;
-
+        }
         mp4_sec->mp4_flags = MP4_NO_ACCESS;
         cred->security = mp4_sec;
         return 0;
@@ -110,9 +114,8 @@ static int mp4_cred_alloc_blank(struct cred *cred, gfp_t gfp)
  */
 static void mp4_cred_free(struct cred *cred)
 {
-        struct mp4_security *mp4_sec = cred->security;
+        kfree(cred->security);
         cred->security = NULL;
-        kfree(mp4_sec);
 }
 
 /**
@@ -132,9 +135,10 @@ static int mp4_cred_prepare(struct cred *new, const struct cred *old,
         old_mp4_sec = old->security;
 
         mp4_sec = kmemdup(old_mp4_sec, sizeof(struct mp4_security), gfp);
-        if (!mp4_sec)
+        if (!mp4_sec){
+                pr_err("kmemdup failed\n");
                 return -ENOMEM;
-
+        }
         mp4_sec->mp4_flags = MP4_NO_ACCESS;
         new->security = mp4_sec;
         return 0;
@@ -157,47 +161,19 @@ static int mp4_inode_init_security(struct inode *inode, struct inode *dir,
                                    const struct qstr *qstr,
                                    const char **name, void **value, size_t *len)
 {
-        const struct mp4_security *curr_mp4_sec = current->cred->security;
-        char *xattr_name;
-        if (!curr_mp4_sec) {
-                pr_err("dentry is null\n");
-                return -EOPNOTSUPP;
-        }
-        if (curr_mp4_sec->mp4_flags != MP4_TARGET_SID) {
-                pr_info("create subject not target\n");
-                return -EOPNOTSUPP;
-        }
-        if (name) {
-                xattr_name = kmalloc(strlen(XATTR_MP4_SUFFIX) + 1, GFP_KERNEL);
-                strcpy(xattr_name, XATTR_MP4_SUFFIX);
-                *name = xattr_name;
-        } else {
-                pr_err("name null\n");
-                return -EOPNOTSUPP;
-        }
-        if (value && len) {
-                if (S_ISDIR(inode->i_mode)) {
-                        *len = strlen("dir-write") + 1;
-                } else{
-                        *len = strlen("read-write") + 1;
-                }
+        const struct mp4_security *curr_mp4_sec = current_security();
+        struct dentry *de;
+        int rc = -EOPNOTSUPP;
 
-                *value = kmalloc(*len, GFP_KERNEL);
-                if (!*value) {
-                        pr_err("no memory\n");
-                        return -ENOMEM;
-                }
-
-                if (S_ISDIR(inode->i_mode)) {
-                        strcpy(*value, "dir-write");
-                } else{
-                        strcpy(*value, "read-write");
-                }
+        if (curr_mp4_sec && curr_mp4_sec->mp4_flags == MP4_TARGET_SID) {
+                de = d_find_alias(inode);
+                rc = inode->i_op->setxattr(de, XATTR_NAME_MP4,
+                                        "read-write", strlen("read-write"), 0);
+                dput(de);
         } else {
-                pr_err("value or len null\n");
-                return -EOPNOTSUPP;
+                pr_info("inode_init_security: not target\n");
         }
-        return 0;
+        return rc;
 }
 
 static int check_access(int sid, int mask)
@@ -296,18 +272,17 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
                 /* not target */
                 if (S_ISDIR(inode->i_mode)) {
                         /* allow them full access to directories */
-                        pr_info("Dir, not target\n");
+                        pr_info("Dir, not target, granted\n");
                         return 0;
                 } else {
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
-                        if (osid >= 0 && (mask & (MAY_READ | MAY_ACCESS | MAY_OPEN |
-                                                        MAY_NOT_BLOCK))) {
-                        pr_info("Read, not target\n");
+                        if (osid >= 0 && (mask & READ_ACCESS)) {
+                                pr_info("Read, not target, granted\n");
                                 return 0;
                         } else {
                                 //rc = -EACCES;
-                                pr_info("Not read, not target\n");
+                                pr_info("Not read, not target, denied\n");
                                 return 0;
                         }
                 }
@@ -347,6 +322,7 @@ static int mp4_inode_permission(struct inode *inode, int mask)
                 goto out;
         }
         dentry_path_raw(de, path, PATH_LEN - 1);
+        /* skip over certain paths heavily used during boot time */
         if (mp4_should_skip_path(path)) {
                 rc = 0;
                 goto out;
