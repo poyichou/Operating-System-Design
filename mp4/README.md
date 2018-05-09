@@ -35,3 +35,8 @@ CS423 machine problem 4 support (SECURITY_MP4_LSM) [N/y/?] (NEW) y
 sudo dpkg -i linux-image-4.4.0-*_4.4.0-*_amd64.deb
 sudo dpkg -i linux-headers-4.4.0-*_4.4.0-*_amd64.deb
 ```
+## To add the security module as the default only major LSM  
+```bash
+#change `GRUB_CMDLINE_LINUX_DEFAULT="quiet nosplash"` to `GRUB_CMDLINE_LINUX_DEFAULT="quiet nosplash security=mp4"`
+vim /etc/default/grub
+```
