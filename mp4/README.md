@@ -1,4 +1,5 @@
 # Linux Security Module  
+
 ## To compile kernel (might fail on Ubuntu 14.04 because old version of gcc)  
 ```bash
 sudo apt-get install git build-essential kernel-package fakeroot libncurses5-dev libssl-dev ccache libelf-dev
@@ -11,6 +12,13 @@ git checkout v4.4
 #copy existing conf
 cp /boot/config-‘uname -r‘ .config
 yes '' | make oldconfig
+```
+#### To speed up compiling  
+```bash
+make menuconfig
+# Kernel Hacking -> Compile-time checks and compiler options -> Compile the kernel with debug info <-- disable
+```
+```bash
 cp -r [mp4] security/
 #add `source security/mp4/Kconfig` to line 125
 vim security/Kconfig
