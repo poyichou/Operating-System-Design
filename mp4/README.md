@@ -39,4 +39,5 @@ sudo dpkg -i linux-headers-4.4.0-*_4.4.0-*_amd64.deb
 ```bash
 #change `GRUB_CMDLINE_LINUX_DEFAULT="quiet nosplash"` to `GRUB_CMDLINE_LINUX_DEFAULT="quiet nosplash security=mp4"`
 vim /etc/default/grub
+sudo update-grub
 ```
