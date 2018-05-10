@@ -34,7 +34,7 @@ static int get_inode_sid(struct inode *inode)
         struct dentry *de;
         de = d_find_alias(inode);
         if (!de) {
-                pr_err("dentry is null\n");
+                //pr_err("dentry is null\n");
                 sid = -1;
                 goto out;
         }
@@ -70,17 +70,17 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         struct inode *inode = file_inode(bprm->file);
         int sid;
         new_mp4_sec = bprm->cred->security;
+        if(!new_mp4_sec) {
+                //pr_debug("set_creds to null mp4_security\n");
+                return -1;
+        }
         sid = get_inode_sid(inode);
         if (sid == -2) {
                 return 0;
         }else if (sid < 0) {
                 return -1;
         }
-        if(!new_mp4_sec) {
-                pr_debug("set_creds to null mp4_security\n");
-                return -1;
-        }
-        if (sid  == MP4_TARGET_SID) {
+        if (sid == MP4_TARGET_SID) {
                 new_mp4_sec->mp4_flags = MP4_TARGET_SID;
         }
         return 0;
@@ -104,7 +104,7 @@ static int mp4_cred_alloc_blank(struct cred *cred, gfp_t gfp)
         }
         mp4_sec->mp4_flags = MP4_NO_ACCESS;
         cred->security = mp4_sec;
-        pr_info("mp4_cred_alloc_blank succeed\n");
+        //pr_info("mp4_cred_alloc_blank succeed\n");
         return 0;
 }
 
@@ -119,7 +119,7 @@ static void mp4_cred_free(struct cred *cred)
 {
         kfree(cred->security);
         cred->security = NULL;
-        pr_info("mp4_cred_free succeed\n");
+        //pr_info("mp4_cred_free succeed\n");
 }
 
 /**
@@ -149,7 +149,7 @@ static int mp4_cred_prepare(struct cred *new, const struct cred *old,
         }
         mp4_sec->mp4_flags = MP4_NO_ACCESS;
         new->security = mp4_sec;
-        pr_info("mp4_cred_prepare succeed\n");
+        //pr_info("mp4_cred_prepare succeed\n");
         return 0;
 }
 
@@ -179,9 +179,9 @@ static int mp4_inode_init_security(struct inode *inode, struct inode *dir,
                 rc = inode->i_op->setxattr(de, XATTR_NAME_MP4,
                                         "read-write", strlen("read-write"), 0);
                 dput(de);
-                pr_info("inode_init_security: target\n");
-        } else {
-                pr_info("inode_init_security: not target\n");
+        //        pr_info("inode_init_security: target\n");
+        //} else {
+        //        pr_info("inode_init_security: not target\n");
         }
         return rc;
 }
@@ -197,7 +197,7 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_READ_OBJ:
                         if (mask & READ_ACCESS) {
-                                pr_info("MP4_READ_OBJ and READ_ACCESS by target\n");
+                                //pr_info("MP4_READ_OBJ and READ_ACCESS by target\n");
                                 rc = 0;
                         } else {
                                 //rc = -EACCES;
@@ -207,7 +207,7 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_READ_WRITE:
                         if (mask & RDWR_ACCESS) {
-                                pr_info("MP4_READ_WRITE and RDWR_ACCESS by target\n");
+                                //pr_info("MP4_READ_WRITE and RDWR_ACCESS by target\n");
                                 rc = 0;
                         } else {
                                 //rc = -EACCES;
@@ -217,7 +217,7 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_WRITE_OBJ:
                         if (mask & WRITE_ACCESS) {
-                                pr_info("MP4_WRITE_OBJ and WRITE_ACCESS by target\n");
+                                //pr_info("MP4_WRITE_OBJ and WRITE_ACCESS by target\n");
                                 rc = 0;
                         } else {
                                 //rc = -EACCES;
@@ -227,7 +227,7 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_EXEC_OBJ:
                         if (mask & EXEC_ACCESS) {
-                                pr_info("MP4_EXEC_OBJ and EXEC_ACCESS by target\n");
+                                //pr_info("MP4_EXEC_OBJ and EXEC_ACCESS by target\n");
                                 rc = 0;
                         } else {
                                 //rc = -EACCES;
@@ -237,7 +237,7 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_READ_DIR:
                         if (mask & RD_DIR_ACCESS) {
-                                pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
+                                //pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
                                 rc = 0;
                         } else {
                                 //rc = -EACCES;
@@ -247,7 +247,7 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_RW_DIR:
                         if (mask & RW_DIR_ACCESS) {
-                                pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
+                                //pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
                                 rc = 0;
                         } else {
                                 //rc = -EACCES;
@@ -282,13 +282,13 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
                 /* not target */
                 if (S_ISDIR(inode->i_mode)) {
                         /* allow them full access to directories */
-                        pr_info("Dir, not target, granted\n");
+                        //pr_info("Dir, not target, granted\n");
                         return 0;
                 } else {
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
                         if (osid >= 0 && (mask & READ_ACCESS)) {
-                                pr_info("Read, not target, granted\n");
+                                //pr_info("Read, not target, granted\n");
                                 return 0;
                         } else {
                                 //rc = -EACCES;
@@ -326,7 +326,7 @@ static int mp4_inode_permission(struct inode *inode, int mask)
 
         de = d_find_alias(inode);
         if (!de) {
-                pr_err("dentry is null\n");
+                //pr_err("dentry is null\n");
                 rc = 0;
                 // rc -EACCES;
                 goto out;
