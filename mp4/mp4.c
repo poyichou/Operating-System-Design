@@ -44,6 +44,7 @@ static int get_inode_sid(struct inode *inode)
                 sid = -1;
                 goto out;
         }
+        xattr_value[rc] = 0;
         sid = __cred_ctx_to_sid(xattr_value);
 out:
         if (de) {
@@ -71,6 +72,7 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         }
         sid = get_inode_sid(inode);
         if (sid == MP4_TARGET_SID) {
+                pr_info("mp4_bprm_set_creds\n");
                 new_mp4_sec->mp4_flags = MP4_TARGET_SID;
         }
         return 0;
@@ -336,6 +338,7 @@ static int mp4_inode_permission(struct inode *inode, int mask)
                 /*no attribute, grant*/
                 rc = 0;
         } else {
+                xattr_value[rc] = 0;
                 rc = mp4_has_permission(inode, curr_mp4_sec->mp4_flags, 
                                 __cred_ctx_to_sid(xattr_value), mask);
         }
