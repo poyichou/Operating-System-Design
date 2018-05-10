@@ -186,7 +186,7 @@ static int check_access(int sid, int mask)
                         rc = 0;
                         break;
                 case MP4_READ_OBJ:
-                        if (mask | READ_ACCESS == READ_ACCESS) {
+                        if ((mask | READ_ACCESS) == READ_ACCESS) {
                                 //pr_info("MP4_READ_OBJ and READ_ACCESS by target\n");
                                 rc = 0;
                         } else {
@@ -196,7 +196,7 @@ static int check_access(int sid, int mask)
                         }
                         break;
                 case MP4_READ_WRITE:
-                        if (mask | RDWR_ACCESS == RDWR_ACCESS) {
+                        if ((mask | RDWR_ACCESS) == RDWR_ACCESS) {
                                 //pr_info("MP4_READ_WRITE and RDWR_ACCESS by target\n");
                                 rc = 0;
                         } else {
@@ -206,7 +206,7 @@ static int check_access(int sid, int mask)
                         }
                         break;
                 case MP4_WRITE_OBJ:
-                        if (mask | WRITE_ACCESS == WRITE_ACCESS) {
+                        if ((mask | WRITE_ACCESS) == WRITE_ACCESS) {
                                 //pr_info("MP4_WRITE_OBJ and WRITE_ACCESS by target\n");
                                 rc = 0;
                         } else {
@@ -216,7 +216,7 @@ static int check_access(int sid, int mask)
                         }
                         break;
                 case MP4_EXEC_OBJ:
-                        if (mask | EXEC_ACCESS == EXEC_ACCESS) {
+                        if ((mask | EXEC_ACCESS) == EXEC_ACCESS) {
                                 //pr_info("MP4_EXEC_OBJ and EXEC_ACCESS by target\n");
                                 rc = 0;
                         } else {
@@ -226,7 +226,7 @@ static int check_access(int sid, int mask)
                         }
                         break;
                 case MP4_READ_DIR:
-                        if (mask | RD_DIR_ACCESS == RD_DIR_ACCESS) {
+                        if ((mask | RD_DIR_ACCESS) == RD_DIR_ACCESS) {
                                 //pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
                                 rc = 0;
                         } else {
@@ -236,7 +236,7 @@ static int check_access(int sid, int mask)
                         }
                         break;
                 case MP4_RW_DIR:
-                        if (mask | RW_DIR_ACCESS == RW_DIR_ACCESS) {
+                        if ((mask | RW_DIR_ACCESS) == RW_DIR_ACCESS) {
                                 //pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
                                 rc = 0;
                         } else {
@@ -276,7 +276,7 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
                 } else {
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
-                        if (mask | READ_ACCESS == READ_ACCESS) {
+                        if ((mask | READ_ACCESS) == READ_ACCESS) {
                                 //pr_info("Read, not target, granted\n");
                                 return 0;
                         } else {
