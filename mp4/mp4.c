@@ -76,7 +76,7 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         }
         sid = get_inode_sid(inode);
         if (sid == -2) {
-                return 0;
+                return -EOPNOTSUPP;
         }else if (sid < 0) {
                 return -1;
         }
@@ -256,9 +256,8 @@ static int check_access(int sid, int mask)
                         }
                         break;
                 default:
-                        /* should not match */
-                        //rc = -EACCES;
-                        pr_info("No osid by target\n");
+                        /*should not match*/
+                        pr_info("should not match\n");
                         rc = 0;
                         break;
         }
@@ -287,12 +286,12 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
                 } else {
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
-                        if (osid >= 0 && (mask & READ_ACCESS)) {
+                        if (mask & READ_ACCESS) {
                                 //pr_info("Read, not target, granted\n");
                                 return 0;
                         } else {
                                 //rc = -EACCES;
-                                pr_info("Not read, not target, denied\n");
+                                pr_info("ssid=%d, osid=%d,Not read, not target, denied\n", ssid, osid);
                                 return 0;
                         }
                 }
@@ -317,7 +316,6 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
  */
 static int mp4_inode_permission(struct inode *inode, int mask)
 {
-        const struct cred *cred;
         const struct mp4_security *curr_mp4_sec;
         struct dentry *de;
         char xattr_value[XATTR_MAX_SIZE];
@@ -340,14 +338,14 @@ static int mp4_inode_permission(struct inode *inode, int mask)
         if (!inode->i_op->getxattr) {
                 //pr_err("getxattr not exist\n");
                 //rc = -EACCES;
-                rc = 0;
+                rc = -EOPNOTSUPP;
                 goto out;
         }
-        cred = current_cred();
-        curr_mp4_sec = cred->security;
+        curr_mp4_sec = current_security();
         rc = inode->i_op->getxattr(de, XATTR_NAME_MP4, xattr_value, XATTR_MAX_SIZE);
         if (rc <= 0) {
-                rc = mp4_has_permission(inode, curr_mp4_sec->mp4_flags, -1, mask);
+                /*no attribute, grant*/
+                rc = 0;
         } else {
                 rc = mp4_has_permission(inode, curr_mp4_sec->mp4_flags, 
                                 __cred_ctx_to_sid(xattr_value), mask);
