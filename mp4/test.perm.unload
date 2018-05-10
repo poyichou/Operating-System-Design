@@ -1,4 +1,4 @@
-setfattr -x security.mp4 -v target /bin/cat
-setfattr -x security.mp4 -v dir /home
-setfattr -x security.mp4 -v dir /home/poyiyc2
-setfattr -x security.mp4 -v read-only /home/poyiyc2/test.perm
+setfattr -x security.mp4 /bin/cat
+setfattr -x security.mp4 /home
+setfattr -x security.mp4 /home/poyiyc2
+setfattr -x security.mp4 /home/poyiyc2/test.perm
