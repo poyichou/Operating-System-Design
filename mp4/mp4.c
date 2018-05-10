@@ -166,11 +166,12 @@ static int mp4_inode_init_security(struct inode *inode, struct inode *dir,
         struct dentry *de;
         int rc = -EOPNOTSUPP;
 
-        if (curr_mp4_sec && curr_mp4_sec->mp4_flags == MP4_TARGET_SID) {
+        if (curr_mp4_sec && curr_mp4_sec->mp4_flags == MP4_TARGET_SID && inode->i_op->setxattr) {
                 de = d_find_alias(inode);
-                rc = inode->i_op->setxattr(de, XATTR_NAME_MP4,
+                inode->i_op->setxattr(de, XATTR_NAME_MP4,
                                         "read-write", strlen("read-write"), 0);
                 dput(de);
+                rc = 0;
         //        pr_info("inode_init_security: target\n");
         //} else {
         //        pr_info("inode_init_security: not target\n");
@@ -279,7 +280,7 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
                         if ((mask | READ_ACCESS) == READ_ACCESS) {
-                                //pr_info("Read, not target, granted\n");
+                                pr_info("ssid=%d, osid=%d,Read, not target, granted\n", ssid, osid);
                                 return 0;
                         } else {
                                 //rc = -EACCES;
