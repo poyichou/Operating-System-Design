@@ -33,20 +33,15 @@ static int get_inode_sid(struct inode *inode)
         char xattr_value[XATTR_MAX_SIZE];
         struct dentry *de;
         de = d_find_alias(inode);
-        if (!de) {
-                //pr_err("dentry is null\n");
-                sid = -1;
-                goto out;
-        }
         if (!inode->i_op->getxattr) {
-                //pr_err("getxattr not exist\n");
-                sid = -2;
+                /*not support*/
+                sid = -1;
                 goto out;
         }
         rc = inode->i_op->getxattr(de, XATTR_NAME_MP4, xattr_value, XATTR_MAX_SIZE);
         if (rc <= 0) {
-                //pr_err("getxattr ret < 0\n");
-                sid = 0;
+                /*no such attribute*/
+                sid = -1;
                 goto out;
         }
         sid = __cred_ctx_to_sid(xattr_value);
@@ -71,15 +66,10 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         int sid;
         new_mp4_sec = bprm->cred->security;
         if(!new_mp4_sec) {
-                //pr_debug("set_creds to null mp4_security\n");
+                pr_err("set_creds to null mp4_security\n");
                 return -1;
         }
         sid = get_inode_sid(inode);
-        if (sid == -2) {
-                return -EOPNOTSUPP;
-        }else if (sid < 0) {
-                return -1;
-        }
         if (sid == MP4_TARGET_SID) {
                 new_mp4_sec->mp4_flags = MP4_TARGET_SID;
         }
@@ -336,9 +326,8 @@ static int mp4_inode_permission(struct inode *inode, int mask)
                 goto out;
         }
         if (!inode->i_op->getxattr) {
-                //pr_err("getxattr not exist\n");
-                //rc = -EACCES;
-                rc = -EOPNOTSUPP;
+                /*not support*/
+                rc = 0;
                 goto out;
         }
         curr_mp4_sec = current_security();
