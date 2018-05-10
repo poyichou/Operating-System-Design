@@ -65,6 +65,9 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         struct mp4_security *new_mp4_sec;
         struct inode *inode = file_inode(bprm->file);
         int sid;
+        if (bprm->cred_prepared) {
+                return 0;
+        }
         new_mp4_sec = bprm->cred->security;
         if(!new_mp4_sec) {
                 pr_err("set_creds to null mp4_security\n");
@@ -72,8 +75,8 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         }
         sid = get_inode_sid(inode);
         if (sid == MP4_TARGET_SID) {
-                pr_info("mp4_bprm_set_creds\n");
                 new_mp4_sec->mp4_flags = MP4_TARGET_SID;
+                pr_info("mp4_bprm_set_creds, %d\n", new_mp4_sec->mp4_flags);
         }
         return 0;
 }
