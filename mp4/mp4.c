@@ -45,8 +45,8 @@ static int get_inode_sid(struct inode *inode)
         }
         rc = inode->i_op->getxattr(de, XATTR_NAME_MP4, xattr_value, XATTR_MAX_SIZE);
         if (rc <= 0) {
-                pr_err("getxattr ret < 0\n");
-                sid = -1;
+                //pr_err("getxattr ret < 0\n");
+                sid = 0;
                 goto out;
         }
         sid = __cred_ctx_to_sid(xattr_value);
