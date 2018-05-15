@@ -30,7 +30,7 @@
 static int get_inode_sid(struct inode *inode)
 {
         int sid, rc;
-        char xattr_value[XATTR_MAX_SIZE];
+        char xattr_value[XATTR_MAX_SIZE + 1];
         struct dentry *de;
         de = d_find_alias(inode);
         if (!inode->i_op->getxattr) {
@@ -76,6 +76,7 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         sid = get_inode_sid(inode);
         if (sid == MP4_TARGET_SID) {
                 new_mp4_sec->mp4_flags = MP4_TARGET_SID;
+                bprm->per_clear |= PER_CLEAR_ON_SETID;
                 pr_info("mp4_bprm_set_creds, %d\n", new_mp4_sec->mp4_flags);
         }
         return 0;
