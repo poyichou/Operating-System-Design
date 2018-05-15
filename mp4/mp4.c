@@ -294,6 +294,9 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
         } else {
                 /* target */
                 rc = check_access(osid, mask);
+                if (rc == 0) {
+                        pr_info("ssid=%d, osid=%d,Not read, not target, denied\n", ssid, osid);
+                }
         }
         return rc;
 }
@@ -345,6 +348,9 @@ static int mp4_inode_permission(struct inode *inode, int mask)
                 xattr_value[rc] = 0;
                 rc = mp4_has_permission(inode, curr_mp4_sec->mp4_flags, 
                                 __cred_ctx_to_sid(xattr_value), mask);
+                if (rc == 0) {
+                        pr_info("path=%s\n", path);
+                }
         }
 out:
         if (de) {
