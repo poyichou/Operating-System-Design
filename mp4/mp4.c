@@ -188,68 +188,48 @@ static int check_access(int sid, int mask)
         int rc = 0;
         switch (sid) {
                 case MP4_NO_ACCESS:
-                        //rc = -EACCES;
-                        pr_info("NO_ACCESS by target\n");
-                        rc = 0;
+                        rc = -EACCES;
                         break;
                 case MP4_READ_OBJ:
                         if ((mask | READ_ACCESS) == READ_ACCESS) {
-                                //pr_info("MP4_READ_OBJ and READ_ACCESS by target\n");
                                 rc = 0;
                         } else {
-                                //rc = -EACCES;
-                                pr_info("MP4_READ_OBJ but not READ_ACCESS by target\n");
-                                rc = 0;
+                                rc = -EACCES;
                         }
                         break;
                 case MP4_READ_WRITE:
                         if ((mask | RDWR_ACCESS) == RDWR_ACCESS) {
-                                //pr_info("MP4_READ_WRITE and RDWR_ACCESS by target\n");
                                 rc = 0;
                         } else {
-                                //rc = -EACCES;
-                                pr_info("MP4_READ_WRITE but not RDWR_ACCESS by target\n");
-                                rc = 0;
+                                rc = -EACCES;
                         }
                         break;
                 case MP4_WRITE_OBJ:
                         if ((mask | WRITE_ACCESS) == WRITE_ACCESS) {
-                                //pr_info("MP4_WRITE_OBJ and WRITE_ACCESS by target\n");
                                 rc = 0;
                         } else {
-                                //rc = -EACCES;
-                                pr_info("MP4_WRITE_OBJ but not WRITE_ACCESS by target\n");
-                                rc = 0;
+                                rc = -EACCES;
                         }
                         break;
                 case MP4_EXEC_OBJ:
                         if ((mask | EXEC_ACCESS) == EXEC_ACCESS) {
-                                //pr_info("MP4_EXEC_OBJ and EXEC_ACCESS by target\n");
                                 rc = 0;
                         } else {
-                                //rc = -EACCES;
-                                pr_info("MP4_EXEC_OBJ but not EXEC_ACCESS by target\n");
-                                rc = 0;
+                                rc = -EACCES;
                         }
                         break;
                 case MP4_READ_DIR:
                         if ((mask | RD_DIR_ACCESS) == RD_DIR_ACCESS) {
-                                //pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
                                 rc = 0;
                         } else {
-                                //rc = -EACCES;
-                                pr_info("MP4_READ_DIR but not RD_DIR_ACCESS by target\n");
-                                rc = 0;
+                                rc = -EACCES;
                         }
                         break;
                 case MP4_RW_DIR:
                         if ((mask | RW_DIR_ACCESS) == RW_DIR_ACCESS) {
-                                //pr_info("MP4_READ_DIR and RD_DIR_ACCESS by target\n");
                                 rc = 0;
                         } else {
-                                //rc = -EACCES;
-                                pr_info("MP4_READ_DIR but not RD_DIR_ACCESS by target\n");
-                                rc = 0;
+                                rc = -EACCES;
                         }
                         break;
                 default:
@@ -278,26 +258,19 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
                 /* not target */
                 if (S_ISDIR(inode->i_mode)) {
                         /* allow them full access to directories */
-                        //pr_info("Dir, not target, granted\n");
                         return 0;
                 } else {
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
                         if ((mask | READ_ACCESS) == READ_ACCESS) {
-                                pr_info("ssid=%d, osid=%d,Read, not target, granted\n", ssid, osid);
                                 return 0;
                         } else {
-                                //rc = -EACCES;
-                                pr_info("ssid=%d, osid=%d,Not read, not target, denied\n", ssid, osid);
-                                return 0;
+                                return -EACCES;
                         }
                 }
         } else {
                 /* target */
                 rc = check_access(osid, mask);
-                if (rc == 0) {
-                        pr_info("ssid=%d, osid=%d,Not read, not target, denied\n", ssid, osid);
-                }
         }
         return rc;
 }
@@ -324,9 +297,8 @@ static int mp4_inode_permission(struct inode *inode, int mask)
 
         de = d_find_alias(inode);
         if (!de) {
-                //pr_err("dentry is null\n");
+                /* dentry is null */
                 rc = 0;
-                // rc -EACCES;
                 goto out;
         }
         dentry_path_raw(de, path, PATH_LEN - 1);
@@ -336,22 +308,19 @@ static int mp4_inode_permission(struct inode *inode, int mask)
                 goto out;
         }
         if (!inode->i_op->getxattr) {
-                /*not support*/
+                /* not support */
                 rc = 0;
                 goto out;
         }
         curr_mp4_sec = current_security();
         rc = inode->i_op->getxattr(de, XATTR_NAME_MP4, xattr_value, XATTR_MAX_SIZE);
         if (rc <= 0) {
-                /*no attribute, grant*/
+                /* no attribute, grant */
                 rc = 0;
         } else {
                 xattr_value[rc] = 0;
                 rc = mp4_has_permission(inode, curr_mp4_sec->mp4_flags, 
                                 __cred_ctx_to_sid(xattr_value), mask);
-                if (rc == 0) {
-                        pr_info("path=%s\n", path);
-                }
         }
 out:
         if (de) {
