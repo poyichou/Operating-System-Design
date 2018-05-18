@@ -191,46 +191,38 @@ static int check_access(int sid, int mask)
                         rc = -EACCES;
                         break;
                 case MP4_READ_OBJ:
-                        if ((mask | READ_ACCESS) == READ_ACCESS) {
-                                rc = 0;
-                        } else {
+                        if (mask & MAY_WRITE || mask & MAY_EXEC) {
                                 rc = -EACCES;
+                        } else {
+                                rc = 0;
                         }
                         break;
                 case MP4_READ_WRITE:
-                        if ((mask | RDWR_ACCESS) == RDWR_ACCESS) {
-                                rc = 0;
-                        } else {
+                        if (mask & MAY_EXEC) {
                                 rc = -EACCES;
+                        } else {
+                                rc = 0;
                         }
                         break;
                 case MP4_WRITE_OBJ:
-                        if ((mask | WRITE_ACCESS) == WRITE_ACCESS) {
-                                rc = 0;
-                        } else {
+                        if (mask & MAY_READ || mask & MAY_EXEC) {
                                 rc = -EACCES;
+                        } else {
+                                rc = 0;
                         }
                         break;
                 case MP4_EXEC_OBJ:
-                        if ((mask | EXEC_ACCESS) == EXEC_ACCESS) {
-                                rc = 0;
-                        } else {
-                                rc = -EACCES;
-                        }
+                        rc = 0;
                         break;
                 case MP4_READ_DIR:
-                        if ((mask | RD_DIR_ACCESS) == RD_DIR_ACCESS) {
-                                rc = 0;
-                        } else {
+                        if (mask & MAY_WRITE) {
                                 rc = -EACCES;
+                        } else {
+                                rc = 0;
                         }
                         break;
                 case MP4_RW_DIR:
-                        if ((mask | RW_DIR_ACCESS) == RW_DIR_ACCESS) {
-                                rc = 0;
-                        } else {
-                                rc = -EACCES;
-                        }
+                        rc = 0;
                         break;
                 default:
                         /*should not match*/
