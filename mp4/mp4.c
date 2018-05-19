@@ -77,7 +77,6 @@ static int mp4_bprm_set_creds(struct linux_binprm *bprm)
         if (sid == MP4_TARGET_SID) {
                 new_mp4_sec->mp4_flags = MP4_TARGET_SID;
                 bprm->per_clear |= PER_CLEAR_ON_SETID;
-                pr_info("mp4_bprm_set_creds, %d\n", new_mp4_sec->mp4_flags);
         }
         return 0;
 }
@@ -115,7 +114,6 @@ static void mp4_cred_free(struct cred *cred)
 {
         kfree(cred->security);
         cred->security = NULL;
-        //pr_info("mp4_cred_free succeed\n");
 }
 
 /**
@@ -145,7 +143,6 @@ static int mp4_cred_prepare(struct cred *new, const struct cred *old,
         }
         mp4_sec->mp4_flags = MP4_NO_ACCESS;
         new->security = mp4_sec;
-        //pr_info("mp4_cred_prepare succeed\n");
         return 0;
 }
 
@@ -188,10 +185,12 @@ static int check_access(int sid, int mask)
         int rc = 0;
         switch (sid) {
                 case MP4_NO_ACCESS:
+                        pr_info("MP4_NO_ACCESS\n");
                         rc = -EACCES;
                         break;
                 case MP4_READ_OBJ:
-                        if (mask & MAY_WRITE || mask & MAY_EXEC) {
+                        if ((mask & MAY_WRITE) || (mask & MAY_EXEC)) {
+                                pr_info("MP4_READ_OBJ\n");
                                 rc = -EACCES;
                         } else {
                                 rc = 0;
@@ -199,13 +198,15 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_READ_WRITE:
                         if (mask & MAY_EXEC) {
+                                pr_info("MP4_READ_WRITE\n");
                                 rc = -EACCES;
                         } else {
                                 rc = 0;
                         }
                         break;
                 case MP4_WRITE_OBJ:
-                        if (mask & MAY_READ || mask & MAY_EXEC) {
+                        if ((mask & MAY_READ) || (mask & MAY_EXEC)) {
+                                pr_info("MP4_WRITE_OBJ\n");
                                 rc = -EACCES;
                         } else {
                                 rc = 0;
@@ -216,6 +217,7 @@ static int check_access(int sid, int mask)
                         break;
                 case MP4_READ_DIR:
                         if (mask & MAY_WRITE) {
+                                pr_info("MP4_READ_DIR\n");
                                 rc = -EACCES;
                         } else {
                                 rc = 0;
@@ -254,10 +256,13 @@ static int mp4_has_permission(struct inode *inode, int ssid, int osid, int mask)
                 } else {
                         /* allow read-only access to files that have been
                            assigned one of our custom labels */
-                        if ((mask | READ_ACCESS) == READ_ACCESS) {
-                                return 0;
-                        } else {
+                        //if ((mask & MAY_WRITE) || (mask & MAY_EXEC)) {
+                        if (mask & MAY_WRITE) {
+                                pr_info("not target, dir\n");
                                 return -EACCES;
+                                //return 0;
+                        } else {
+                                return 0;
                         }
                 }
         } else {
