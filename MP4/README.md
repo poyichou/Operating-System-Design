@@ -46,8 +46,10 @@ sudo update-grub
 Boost into the installed kernel  
 Referring files in test/, write your own .perm, .perm.unload files  
 ```bash
+# To get the path of the binary file of the command
+which [command]
 # To know which files a program would access  
-strace -o [reportfile] [binary of program]
+strace -o [reportfile] [command]
 ```
 ```bash
 # To set xattr to files
