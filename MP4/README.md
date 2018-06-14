@@ -1,4 +1,5 @@
 # Linux Security Module  
+*A simple Linux Security Module(LSM)*  
 
 ## To compile kernel (might fail on Ubuntu 14.04 because old version of gcc)  
 ```bash

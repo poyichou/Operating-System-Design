@@ -1,5 +1,6 @@
 # Kernel module for CS423 in UIUC(MP3)
-  
+*Measure major fault, minor fault, and cpu utilization*  
+
 ## Implementation:  
 * create a proc file to handle registration and unregistration  
   * R \<PID\> for registration -> store it in the list.  

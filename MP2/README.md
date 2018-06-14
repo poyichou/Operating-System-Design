@@ -1,4 +1,5 @@
 # Kernel module for CS423 in UIUC  
+*simple scheduler for registered processes*  
 
 *	Implementation:  
 	change task policy with sched_setscheduler()  

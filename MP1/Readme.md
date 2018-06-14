@@ -1,5 +1,5 @@
-# Kernel module for CS423 in UIUC
-  
+# Kernel module for CS423 in UIUC  
+*Measure running time of registered processes*  
 How to compile:  
 	`make`  
 After compiling, load the module:  
